@@ -1,0 +1,8 @@
+.nav-text-color {
+  color: #d97706; /* amber-600 */
+}
+
+/* Color en modo oscuro */
+.dark .nav-text-color {
+  color: #164e63; /* cyan-900 */
+}

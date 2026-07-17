@@ -1,0 +1,20 @@
+.react-sidenav {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.dark .react-sidenav {
+  background-color: #060a17 !important;
+  color: #ffffff !important;
+}
+
+/* Color de los iconos y texto dentro del nav */
+.react-sidenav .nav-text, 
+.react-sidenav .nav-icon {
+  color: #000000 !important;
+}
+
+.dark .react-sidenav .nav-text,
+.dark .react-sidenav .nav-icon {
+  color: #ffffff !important;
+}
