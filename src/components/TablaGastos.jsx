@@ -17,7 +17,6 @@ export default function TablaGastos({ gastos }) {
         {
             accessorKey: 'perfiles.nombre',
             header: 'Usuario',
-            size: 300,
             // Usamos 'accessorFn' en lugar de 'accessorKey' para mayor control
             accessorFn: (row) => row.perfiles?.nombre || 'Invitado',
             cell: (info) => info.getValue(), // info.getValue ahora es seguro
@@ -44,13 +43,11 @@ export default function TablaGastos({ gastos }) {
         {
             accessorKey: 'monto',
             header: 'Monto',
-            size: 300,
             cell: info => `$${Number(info.getValue()).toLocaleString('es-AR')}`
         },
         {
             accessorKey: 'created_at',
             header: 'Fecha',
-            size: 300,
             cell: info => new Date(info.getValue()).toLocaleDateString()
         },
     ], []);
@@ -69,7 +66,7 @@ export default function TablaGastos({ gastos }) {
     });
 
     return (
-        <div className="bg-white text-dark dark:bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg block max-w-full overflow-x-scroll overflow-y-hidden">
+        <div className="bg-white text-dark dark:bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg block w-full  overflow-hidden">
             <div className="flex justify-end mb-4">
                 <input
                     className="px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none w-64"

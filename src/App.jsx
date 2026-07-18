@@ -14,34 +14,21 @@ import PaginaHistorial from './pages/PaginaHistorial';
 import { AuthProvider } from './context/AuthContext';
 
 function AppContent() {
-  const { sesion, loading, hogarId, setHogarId } = useUser();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { sesion, loading, hogarId } = useUser();
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Cargando...</div>;
-
+  if (loading) return <div>Cargando...</div>;
   if (!sesion) return <Login />;
+  
+  // Si no hay hogar, mostramos SetupHogar sin romper la navegación
+  if (!hogarId) return <SetupHogar userId={sesion.user.id} onHogarSet={(id) => window.location.reload()} />;
 
-  if (!hogarId) {
-    return (
-      <SetupHogar 
-        userId={sesion.user.id} 
-        onHogarSet={(nuevoId) => setHogarId(nuevoId)} 
-      />
-    );
-  }
-
-  // 3. Si SÍ hay sesión, mostramos el contenido principal
   return (
- <BrowserRouter>
+    <>
       <ThemeToggle />
       <div className="flex">
-        {/* Tu Sidebar debería ir aquí si quieres que se vea siempre */}
-        
-        
         <main className="flex-1 mt-12 transition-all duration-300">
           <Routes>
             <Route element={<Layout />}>
-              {/* CAMBIO: Agregué path="/dashboard" y un redirect para la raíz */}
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/graficos" element={<Graficos />} />
@@ -50,13 +37,16 @@ function AppContent() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </>
   );
 }
+
 export default function App() {
   return (
     <UserProvider>
-      <AppContent />
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
     </UserProvider>
   );
 }

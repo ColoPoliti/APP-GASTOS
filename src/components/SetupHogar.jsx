@@ -6,90 +6,112 @@ export default function SetupHogar({ userId, onHogarSet }) {
   const [loading, setLoading] = useState(false);
   const [misHogares, setMisHogares] = useState([]);
   const [existe, setExiste] = useState(null);
+  const [hogarSeleccionadoId, setHogarSeleccionadoId] = useState(null);
 
+  // Verificar si el hogar existe al escribir
   useEffect(() => {
-  if (tempHogar.length < 3) {
-    setExiste(null);
-    return;
-  }
+    if (tempHogar.length < 3) {
+      setExiste(null);
+      return;
+    }
 
-  const checkHogar = async () => {
-    const { data } = await supabase
-      .from('hogares')
-      .select('id')
-      .eq('codigo', tempHogar.toUpperCase())
-      .single();
-    
-    setExiste(!!data); // true si existe, false si no
-  };
-  checkHogar();
-}, [tempHogar]);
+    const checkHogar = async () => {
+      const { data } = await supabase
+        .from('hogares')
+        .select('id')
+        .eq('codigo', tempHogar.toUpperCase())
+        .maybeSingle(); // Usamos maybeSingle para evitar errores si no hay resultados
+      
+      setExiste(!!data);
+    };
+    checkHogar();
+  }, [tempHogar]);
 
+  // Cargar hogares propios
   useEffect(() => {
     const fetchHogares = async () => {
-      // Ahora consultamos la tabla 'hogares' filtrando por el usuario actual
       const { data, error } = await supabase
         .from('hogares')
-        .select('id, codigo') // Traemos el ID y el código
-        .eq('creador_id', userId); // Solo los hogares que este usuario creó
+        .select('id, codigo')
+        .eq('creador_id', userId);
       
-      if (error) {
-        console.error("Error al traer hogares:", error);
-      } else {
-        setMisHogares(data || []);
-      }
+      if (error) console.error("Error al traer hogares:", error);
+      else setMisHogares(data || []);
     };
     fetchHogares();
   }, [userId]);
 
-const handleCrearHogar = async (nombreHogar) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await supabase
-    .from('hogares')
-    .insert([{ codigo: nombreHogar.toUpperCase(), creador_id: user.id }])
-    .select(); // IMPORTANTE: Agregá .select() para recibir el objeto creado
-
-  if (error) {
-    console.error("Error:", error);
-  } else {
-    // Agregamos el nuevo hogar a la lista local inmediatamente
-    setMisHogares([...misHogares, ...data]);
-    setTempHogar(nombreHogar.toUpperCase());
-  }
-};
-const handleConfirmar = async () => {
-    if (!tempHogar) return;
+  const handleCrearHogar = async (nombreHogar) => {
     setLoading(true);
-    
-    // Buscamos hogares que coincidan con el código
-    const { data: hogares, error: fetchError } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: nuevoHogar, error } = await supabase
+      .from('hogares')
+      .insert([{ codigo: nombreHogar.toUpperCase(), creador_id: user.id }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error al crear hogar:", error);
+    } else {
+      // Asignar automáticamente al usuario
+      await supabase
+        .from('perfiles')
+        .update({ hogar_id: nuevoHogar.id })
+        .eq('id', user.id);
+      
+      onHogarSet(nombreHogar.toUpperCase());
+    }
+    setLoading(false);
+  };
+const eliminarHogar = async () => {
+    const hogarABorrar = misHogares.find(h => h.codigo === tempHogar.toUpperCase());
+    if (!hogarABorrar) return;
+
+    if (!window.confirm("¿Seguro? Esto borrará TODO lo que haya en este hogar.")) return;
+
+    try {
+      setLoading(true);
+      
+      // 1. Borramos los gastos del hogar primero
+      await supabase.from('gastos').delete().eq('hogar_id', hogarABorrar.id);
+      
+      // 2. Borramos el hogar
+      const { error } = await supabase.from('hogares').delete().eq('id', hogarABorrar.id);
+      if (error) throw error;
+
+      // 3. Limpiamos el perfil
+      await supabase.from('perfiles').update({ hogar_id: null }).eq('id', userId);
+
+      alert("¡Borrado con éxito!");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleUnirseHogar = async () => {
+    setLoading(true);
+    const { data: hogar, error: fetchError } = await supabase
       .from('hogares')
       .select('id')
       .eq('codigo', tempHogar.toUpperCase())
-      .eq('creador_id', userId); // ¡IMPORTANTE! Solo los del usuario actual
+      .single();
 
-    if (fetchError || !hogares || hogares.length === 0) {
-      console.error("Hogar no encontrado o error:", fetchError);
-      setLoading(false);
-      return;
-    }
-
-    // Tomamos el primero que encuentre de los que son MÍOS
-    const hogarElegido = hogares[0];
-
-    const { error: updateError } = await supabase
-      .from('perfiles')
-      .update({ hogar_id: hogarElegido.id }) 
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error("Error al asignar hogar:", updateError);
+    if (fetchError || !hogar) {
+      console.error("Error al buscar hogar:", fetchError);
     } else {
-      onHogarSet(tempHogar.toUpperCase());
+      const { error: updateError } = await supabase
+        .from('perfiles')
+        .update({ hogar_id: hogar.id })
+        .eq('id', userId);
+
+      if (updateError) console.error("Error al asignar hogar:", updateError);
+      else onHogarSet(tempHogar.toUpperCase());
     }
-    
     setLoading(false);
   };
 
@@ -97,7 +119,7 @@ const handleConfirmar = async () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
       <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full">
         <h2 className="text-white text-xl font-bold mb-4">¡Bienvenido!</h2>
-        <p className="text-slate-400 mb-4 text-sm">Seleccioná tu hogar:</p>
+        <p className="text-slate-400 mb-4 text-sm">Seleccioná o creá tu hogar:</p>
         
         <input 
           className="w-full p-2 mb-4 bg-slate-950 text-white border border-slate-700 rounded-lg uppercase" 
@@ -119,37 +141,32 @@ const handleConfirmar = async () => {
             ))}
           </div>
         )}
-<input 
-  className="w-full p-2 mb-2 bg-slate-950 text-white border border-slate-700 rounded-lg uppercase" 
-  placeholder="Ingresá código de hogar" 
-  value={tempHogar} 
-  onChange={(e) => setTempHogar(e.target.value.toUpperCase())} 
-/>
 
-{tempHogar.length >= 3 && (
-  <div className="mb-4">
-    {existe === true ? (
-      <p className="text-emerald-500 text-xs">✅ Hogar encontrado. ¡Podés unirte!</p>
-    ) : existe === false ? (
-      <p className="text-amber-500 text-xs">⚠️ El hogar no existe. Podés crearlo.</p>
-    ) : null}
-  </div>
-)}
+        {tempHogar.length >= 3 && (
+          <div className="mb-4 text-xs">
+            {existe ? (
+              <p className="text-emerald-500">✅ Hogar encontrado. ¡Podés unirte!</p>
+            ) : (
+              <p className="text-amber-500">⚠️ El código no existe. Podés crearlo.</p>
+            )}
+          </div>
+        )}
 
-<button 
-  onClick={existe ? handleConfirmar : () => handleCrearHogar(tempHogar)} 
-  disabled={loading || tempHogar.length < 3}
-  className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
->
-  {loading ? 'Procesando...' : (existe ? 'Unirse al Hogar' : 'Crear nuevo Hogar')}
-</button>
         <button 
-          onClick={handleConfirmar} 
-          disabled={loading}
-          className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold hover:bg-indigo-500 transition-colors"
+          onClick={existe ? handleUnirseHogar : () => handleCrearHogar(tempHogar)} 
+          disabled={loading || tempHogar.length < 3}
+          className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
         >
-          {loading ? 'Procesando...' : 'Confirmar y Activar'}
+          {loading ? 'Procesando...' : (existe ? 'Unirse al Hogar' : 'Crear nuevo Hogar')}
         </button>
+        {existe && misHogares.find(h => h.codigo === tempHogar.toUpperCase()) && (
+          <button 
+            onClick={eliminarHogar}
+            className="w-full mt-4 p-2 text-red-500 hover:text-red-400 text-xs underline"
+          >
+            Eliminar este hogar
+          </button>
+        )}
       </div>
     </div>
   );

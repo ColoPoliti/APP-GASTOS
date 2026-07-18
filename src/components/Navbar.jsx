@@ -8,8 +8,8 @@ import { FaPen, FaTrash, FaEllipsisV  } from "react-icons/fa";
 import { GiTakeMyMoney } from "react-icons/gi";
 
 const Navbar = () => {
-    // Definimos todo una sola vez
-    const { nombreUsuario, hogarId, setHogarId, sesion } = useUser();
+
+    const { nombreHogar, nombreUsuario, hogarId, setHogarId, sesion, actualizarHogar} = useUser();
 
     const handleCambiarHogar = async () => {
         if (!sesion?.user?.id) return;
@@ -34,11 +34,10 @@ const Navbar = () => {
         { label: 'Cerrar Sesión', value: 'logout' }
     ];
 
-   const manejarSeleccion = async (item) => {
+const manejarSeleccion = async (item) => {
   if (item.value === 'logout') {
     await handleLogout();
   } else if (item.value === 'cambiar_hogar') {
-    // Reutilizamos tu lógica de cambiar hogar
     if (!sesion?.user?.id) return;
     
     await supabase
@@ -46,8 +45,8 @@ const Navbar = () => {
       .update({ hogar_id: null })
       .eq('id', sesion.user.id);
 
-    setHogarId(null);
-    localStorage.removeItem('hogar_id');
+    // USÁ ESTA FUNCIÓN AQUÍ TAMBIÉN:
+    actualizarHogar(null, '');
   }
 };
 
@@ -62,7 +61,7 @@ const Navbar = () => {
 <div className="flex items-center gap-4 text-xs md:text-sm">
     <p className="bg-slate-900 text-white px-2 py-1 rounded hidden sm:block">
         {/* Aquí mostramos que estamos dentro de un hogar, sin intentar fetchear el nombre */}
-        Hogar: {hogarId ? 'Activo' : 'Ninguno'} 
+        Hogar: {nombreHogar ? nombreHogar : 'Ninguno'}
         {hogarId && (
             <button 
                 onClick={handleCambiarHogar} 
