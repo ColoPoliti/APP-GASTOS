@@ -6,113 +6,152 @@ export default function SetupHogar({ userId, onHogarSet }) {
   const [loading, setLoading] = useState(false);
   const [misHogares, setMisHogares] = useState([]);
   const [existe, setExiste] = useState(null);
-  const [hogarSeleccionadoId, setHogarSeleccionadoId] = useState(null);
 
-  // Verificar si el hogar existe al escribir
+  // 1. Verificar si el hogar existe al escribir
   useEffect(() => {
     if (tempHogar.length < 3) {
       setExiste(null);
       return;
     }
-
     const checkHogar = async () => {
       const { data } = await supabase
         .from('hogares')
         .select('id')
         .eq('codigo', tempHogar.toUpperCase())
-        .maybeSingle(); // Usamos maybeSingle para evitar errores si no hay resultados
-      
+        .maybeSingle();
       setExiste(!!data);
     };
     checkHogar();
   }, [tempHogar]);
 
-  // Cargar hogares propios
+  // 2. Unificar la carga de hogares (propios + invitados)
   useEffect(() => {
-    const fetchHogares = async () => {
-      const { data, error } = await supabase
+    const fetchTodosLosHogares = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Hogares creados
+      const { data: creados } = await supabase
         .from('hogares')
         .select('id, codigo')
         .eq('creador_id', userId);
-      
-      if (error) console.error("Error al traer hogares:", error);
-      else setMisHogares(data || []);
+
+      // Hogares invitados
+      const { data: invitaciones } = await supabase
+        .from('invitaciones')
+        .select('hogares(id, codigo)')
+        .eq('email_invitado', user.email);
+
+      const listaCombinada = [
+        ...(creados || []),
+        ...(invitaciones?.map(i => i.hogares).filter(h => h !== null) || [])
+      ];
+      setMisHogares(listaCombinada);
     };
-    fetchHogares();
+    fetchTodosLosHogares();
   }, [userId]);
 
-  const handleCrearHogar = async (nombreHogar) => {
+  // 3. Crear Hogar
+const handleCrearHogar = async (nombreHogar) => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: nuevoHogar, error } = await supabase
-      .from('hogares')
-      .insert([{ codigo: nombreHogar.toUpperCase(), creador_id: user.id }])
-      .select()
-      .single();
+      const { data: nuevoHogar, error } = await supabase
+        .from('hogares')
+        .insert([{ codigo: nombreHogar.toUpperCase(), creador_id: user.id }])
+        .select()
+        .single();
 
-    if (error) {
-      console.error("Error al crear hogar:", error);
-    } else {
-      // Asignar automáticamente al usuario
+      if (error) throw error;
+
       await supabase
         .from('perfiles')
         .update({ hogar_id: nuevoHogar.id })
         .eq('id', user.id);
       
-      onHogarSet(nombreHogar.toUpperCase());
-    }
-    setLoading(false);
-  };
-const eliminarHogar = async () => {
-    const hogarABorrar = misHogares.find(h => h.codigo === tempHogar.toUpperCase());
-    if (!hogarABorrar) return;
-
-    if (!window.confirm("¿Seguro? Esto borrará TODO lo que haya en este hogar.")) return;
-
-    try {
-      setLoading(true);
-      
-      // 1. Borramos los gastos del hogar primero
-      await supabase.from('gastos').delete().eq('hogar_id', hogarABorrar.id);
-      
-      // 2. Borramos el hogar
-      const { error } = await supabase.from('hogares').delete().eq('id', hogarABorrar.id);
-      if (error) throw error;
-
-      // 3. Limpiamos el perfil
-      await supabase.from('perfiles').update({ hogar_id: null }).eq('id', userId);
-
-      alert("¡Borrado con éxito!");
-      window.location.reload();
+      // ACTUALIZACIÓN SIN REFRESH:
+      setMisHogares(prev => [...prev, nuevoHogar]); 
+      setTempHogar(''); // Limpiamos el input
+      onHogarSet(nombreHogar.toUpperCase()); // Avisamos al padre
     } catch (err) {
       console.error(err);
-      alert("Error: " + err.message);
+      alert("Error al crear hogar");
     } finally {
       setLoading(false);
     }
   };
+
+  // 4. Unirse a Hogar existente
   const handleUnirseHogar = async () => {
     setLoading(true);
-    const { data: hogar, error: fetchError } = await supabase
+    const { data: hogar } = await supabase
       .from('hogares')
       .select('id')
       .eq('codigo', tempHogar.toUpperCase())
       .single();
 
-    if (fetchError || !hogar) {
-      console.error("Error al buscar hogar:", fetchError);
-    } else {
-      const { error: updateError } = await supabase
+    if (hogar) {
+      await supabase
         .from('perfiles')
         .update({ hogar_id: hogar.id })
         .eq('id', userId);
-
-      if (updateError) console.error("Error al asignar hogar:", updateError);
-      else onHogarSet(tempHogar.toUpperCase());
+      onHogarSet(tempHogar.toUpperCase());
     }
     setLoading(false);
+  };
+
+  // 5. Eliminar Hogar
+const eliminarHogar = async () => {
+    // Buscamos el hogar en la lista de hogares creados por el usuario
+    // (Asegurate de que 'misHogares' contenga los datos necesarios, 
+    // quizás necesites ajustar el fetch para traer el creador_id si no lo tienes)
+    
+    // Primero, traemos la info real del hogar desde Supabase para verificar el creador
+    setLoading(true);
+    const { data: hogarInfo, error: fetchError } = await supabase
+      .from('hogares')
+      .select('id, creador_id')
+      .eq('codigo', tempHogar.toUpperCase())
+      .single();
+
+    if (fetchError || !hogarInfo) {
+      alert("No se pudo verificar la propiedad del hogar.");
+      setLoading(false);
+      return;
+    }
+
+    // Comparamos el creador_id con tu userId actual
+    if (hogarInfo.creador_id !== userId) {
+      alert("⚠️ Solo el creador de este hogar puede eliminarlo.");
+      setLoading(false);
+      return;
+    }
+
+    // Si pasó la validación, procedemos con el borrado
+    if (!window.confirm("¿Seguro? Esto borrará todo permanentemente.")) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await supabase.from('gastos').delete().eq('hogar_id', hogarInfo.id);
+      await supabase.from('hogares').delete().eq('id', hogarInfo.id);
+      await supabase.from('perfiles').update({ hogar_id: null }).eq('id', userId);
+      
+      setMisHogares(prev => prev.filter(h => h.id !== hogarInfo.id));
+      setTempHogar(''); 
+      setExiste(false);
+      
+      alert("Hogar eliminado correctamente.");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Error al intentar eliminar el hogar.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -3,6 +3,7 @@ import '@trendmicro/react-sidenav/dist/react-sidenav.css';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { navLinks } from '../config/navLinks';
+import './App.css';
 
 export default function Sidebar({ expanded, setExpanded }) {
     const { theme } = useTheme();
@@ -10,6 +11,7 @@ export default function Sidebar({ expanded, setExpanded }) {
 
     return (
         <SideNav
+            className="sidecolor"
             expanded={expanded}
             onToggle={(expanded) => setExpanded(expanded)}
             onSelect={(selected) => {
@@ -22,19 +24,21 @@ export default function Sidebar({ expanded, setExpanded }) {
                 top: '64px',
                 height: 'calc(100vh - 64px)',
                 // Forzamos el background para que no sea transparente
-                background: theme === 'dark' ? '#060a17' : '#e5e7eb',
+                background: theme === 'dark'
+                    ? '#060a17'
+                    : 'linear-gradient(to bottom, #818cf8, #c084fc, #f472b6)',
                 borderRight: theme === 'dark' ? 'none' : '1px solid #d1d5db',
                 zIndex: 40 // Un poco más bajo que el Navbar (que es 50) para que no tape nada
             }}
         >
-            <SideNav.Toggle />
+            <SideNav.Toggle className="sidecolor" />
             <SideNav.Nav defaultSelected="dashboard">
                 {navLinks.map((link) => (
                     <NavItem key={link.id} eventKey={link.id}>
                         <NavIcon>
                             <i className={`fa fa-fw ${link.icon}`} style={{ fontSize: '1.5em' }} />
                         </NavIcon>
-                        <NavText>{link.label}</NavText>
+                        <NavText className="txt-dark">{link.label}</NavText>
                     </NavItem>
                 ))}
             </SideNav.Nav>

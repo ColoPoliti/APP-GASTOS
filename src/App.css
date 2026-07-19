@@ -1,8 +1,13 @@
-.nav-text-color {
-  color: #d97706; /* amber-600 */
-}
 
-/* Color en modo oscuro */
-.dark .nav-text-color {
-  color: #164e63; /* cyan-900 */
-}
+.sidecolor{.fa {
+  color:rgb(8, 8, 8) !important;
+}}
+.sidecolor{span {
+  color:rgb(8, 8, 8) !important;
+}}
+
+
+.dark{.sidecolor{.fa {
+  color:rgb(255, 255, 255) !important;
+}}}
+

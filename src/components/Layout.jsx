@@ -11,7 +11,7 @@ export default function Layout() {
   return (
     <div className="h-screen bg-white dark:bg-gray-950 dark:text-white flex flex-col">
         <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 ">
         {/* Sidebar: Solo visible en PC (md) */}
         <div className="hidden md:block h-full">
           <Sidebar expanded={expanded} setExpanded={setExpanded} />
