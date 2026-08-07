@@ -32,8 +32,9 @@ export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, o
         onGuardar(); 
     };
 
-    return (
-        <section className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl">
+    // Si hay una categoría editándose, envolvemos el formulario en un Modal
+    const contenidoFormulario = (
+        <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-xl">
             <h3 className="text-sm font-bold uppercase mb-3 text-indigo-400">
                 {categoriaEditando ? 'Editar Categoría' : 'Nueva Categoría'}
             </h3>
@@ -62,6 +63,58 @@ export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, o
                     </>
                 )}
             </form>
-        </section>
+        </div>
     );
+
+    // Si está editando, mostramos el modal flotante. Si no, se renderiza normal en su lugar.
+    if (categoriaEditando) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                    
+                    {/* Botón de cierre superior */}
+                    <button 
+                        type="button"
+                        onClick={onCancelar}
+                        className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold"
+                    >
+                        ✕
+                    </button>
+
+                    <h3 className="text-base font-bold uppercase mb-4 text-white">Editar Categoría</h3>
+                    
+                    <form onSubmit={manejarSubmit} className="space-y-4">
+                        <input 
+                            type="text" 
+                            placeholder="Nombre categoría"
+                            value={nombre} 
+                            onChange={(e) => setNombre(e.target.value)} 
+                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 uppercase text-white outline-none focus:border-indigo-500" 
+                        />
+                        
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-400">Color de etiqueta:</span>
+                            <input 
+                                type="color" 
+                                value={color} 
+                                onChange={(e) => setColor(e.target.value)} 
+                                className="w-10 h-10 cursor-pointer bg-transparent rounded-lg" 
+                            />
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition-colors">
+                                Actualizar
+                            </button>
+                            <button type="button" onClick={() => onEliminar(categoriaEditando.id)} className="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-4 rounded-lg font-bold transition-colors border border-rose-900">
+                                🗑️
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    return contenidoFormulario;
 }

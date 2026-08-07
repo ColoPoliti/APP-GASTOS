@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { FaUserPlus, FaTimes } from "react-icons/fa";
 
 export default function InvitarColaborador({ hogarId }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,28 +28,72 @@ export default function InvitarColaborador({ hogarId }) {
     } else {
       alert("¡Invitación enviada a " + email + "!");
       setEmail('');
+      setIsOpen(false);
     }
     setLoading(false);
   };
 
   return (
-    <form onSubmit={handleInvitar} className="p-4 bg-slate-900 rounded-xl border border-slate-700">
-      <h3 className="text-white font-bold mb-2">Invitar a alguien</h3>
-      <input 
-        type="email"
-        className="w-full p-2 mb-2 bg-slate-950 text-white border border-slate-700 rounded-lg"
-        placeholder="Email del colaborador"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
+    <div className="flex items-center  gap-4">
+      <span className="text-sm font-bold text-white">Invitar colaborador</span>
+
+      {/* Botón circular con texto y ícono */}
       <button 
-        type="submit"
-        disabled={loading}
-        className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-500"
+        onClick={() => setIsOpen(true)}
+        className="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
+        title="Invitar colaborador"
       >
-        {loading ? 'Enviando...' : 'Enviar invitación'}
+        <FaUserPlus size={16} />
       </button>
-    </form>
+
+      {/* Modal flotante */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative my-auto">
+            
+            {/* Botón para cerrar */}
+            <button 
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <FaTimes size={18} />
+            </button>
+
+            <h3 className="text-white font-bold text-xl mb-4">Invitar a alguien</h3>
+            
+            <form onSubmit={handleInvitar} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Correo electrónico</label>
+                <input 
+                  type="email"
+                  className="w-full p-3 bg-slate-950 text-white border border-slate-700 rounded-lg focus:outline-none focus:border-indigo-500"
+                  placeholder="colaborador@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-1/2 bg-slate-800 text-slate-300 p-3 rounded-lg font-bold hover:bg-slate-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-1/2 bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

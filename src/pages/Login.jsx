@@ -10,13 +10,16 @@ export default function Login() {
     e.preventDefault();
 
     if (esRegistro) {
-      // 1. Registro del usuario
+      // 1. Registro del usuario (el trigger de Supabase crea el perfil automáticamente)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (authError) { alert(authError.message); return; }
+      if (authError) { 
+        alert(authError.message); 
+        return; 
+      }
 
       if (authData.user) {
         // 2. Buscamos si hay una invitación pendiente para este email
@@ -25,19 +28,16 @@ export default function Login() {
           .select('hogar_id, id')
           .eq('email_invitado', email.toLowerCase())
           .eq('estado', 'pendiente')
-          .single();
+          .maybeSingle();
 
-        // 3. Creamos el perfil (con el hogar_id de la invitación si existe)
-        await supabase.from('perfiles').insert([
-          { 
-            id: authData.user.id, 
-            nombre: email.split('@')[0],
-            hogar_id: invitacion ? invitacion.hogar_id : null // Si hay invitación, le asigna el hogar
-          }
-        ]);
-
-        // 4. Si usamos invitación, la marcamos como aceptada
+        // 3. Si hay invitación, actualizamos el perfil creado automáticamente con el hogar_id
         if (invitacion) {
+          await supabase
+            .from('perfiles')
+            .update({ hogar_id: invitacion.hogar_id })
+            .eq('id', authData.user.id);
+
+          // 4. Marcamos la invitación como aceptada
           await supabase
             .from('invitaciones')
             .update({ estado: 'aceptada' })

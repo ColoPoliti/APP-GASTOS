@@ -22,42 +22,18 @@ export default function Dashboard() {
     const [categoriaEditando, setCategoriaEditando] = useState(null);
     const [gastoEditando, setGastoEditando] = useState(null);
 
-
-
     const verificarInvitaciones = async () => {
         setCargandoInvitacion(true);
         if (sesion?.user?.email) {
             const { data, error } = await supabase
                 .from('invitaciones')
-                .select('*, hogares(codigo)') // Aquí es donde hacemos el JOIN
+                .select('*, hogares(codigo)')
                 .eq('email_invitado', sesion.user.email)
                 .eq('estado', 'pendiente');
-
-            console.log("Datos de la invitación:", data); // <-- MIRÁ ESTO EN LA CONSOLA
 
             setInvitacionPendiente(data && data.length > 0 ? data[0] : null);
         }
         setCargandoInvitacion(false);
-    };
-    const fetchGastos = async (hogarIdActivo) => {
-        if (!hogarIdActivo) return;
-
-        const { data, error } = await supabase
-            .from('gastos')
-            .select(`
-      id, 
-      monto, 
-      descripcion, 
-      pagado_por, 
-      hogar_id, 
-      categorias (nombre), 
-      perfiles (nombre)
-    `)
-            .eq('hogar_id', hogarIdActivo) // <--- ESTO FILTRA EN LA BASE
-            .order('created_at', { ascending: false });
-
-        if (error) console.error("Error cargando gastos:", error);
-        else setGastos(data || []);
     };
 
     useEffect(() => {
@@ -116,8 +92,23 @@ export default function Dashboard() {
 
     const obtenerEstiloCategoria = (categoria, conBordeIzquierdo = false) => {
         const color = categoria?.color || '#6366f1';
-        const baseStyle = { backgroundColor: `${color}20`, color: color, border: `1px solid ${color}50,` };
-        return conBordeIzquierdo ? { ...baseStyle, borderLeftWidth: '7px', borderLeftColor: color } : baseStyle;
+        
+        if (conBordeIzquierdo) {
+            return {
+                backgroundColor: `${color}20`,
+                color: color,
+                borderTop: `1px solid ${color}50`,
+                borderRight: `1px solid ${color}50`,
+                borderBottom: `1px solid ${color}50`,
+                borderLeft: `7px solid ${color}`
+            };
+        }
+
+        return {
+            backgroundColor: `${color}20`,
+            color: color,
+            border: `1px solid ${color}50`
+        };
     };
 
     const gastosFiltrados = tabActiva === 'todos'
@@ -127,25 +118,45 @@ export default function Dashboard() {
     const nombresUsuarios = [...new Set(gastos.map(g => g.perfiles?.nombre || g.perfiles?.email || 'Invitado'))];
 
   
+    if (cargandoInvitacion || loading) {
+        return (
+            <div className="min-h-screen dark:bg-slate-950 bg-white flex items-center justify-center text-slate-400">
+                Cargando...
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen dark:bg-slate-950 bg-white text-dark transition-colors pt-16 duration-300 pb-20">
+        <div className="min-h-screen dark:bg-slate-950 bg-white text-dark transition-colors pt-16 duration-300 pb-20 relative">
+            
+            {/* 🛑 MODAL DE INVITACIÓN PENDIENTE (BLOQUEA LA PANTALLA ANTES DE TODO) */}
+            {invitacionPendiente && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+                    <div className="w-full max-w-md bg-slate-900 border border-indigo-500/50 rounded-2xl p-6 shadow-2xl text-center space-y-6 my-auto">
+                        <div className="w-12 h-12 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+                            ✉️
+                        </div>
+                        <div>
+                            <h2 className="text-white text-xl font-bold mb-2">¡Tenés una invitación!</h2>
+                            <p className="text-slate-300 text-sm">
+                                Te invitaron a unirte al hogar: <strong className="text-indigo-400">{invitacionPendiente.hogares?.codigo}</strong>
+                            </p>
+                        </div>
+                        <div className="pt-2">
+                            <AceptarInvitacion
+                                invitacion={invitacionPendiente}
+                                onAceptado={() => {
+                                    window.location.reload();
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="max-w-6xl mx-auto px-4 py-6">
 
-                {/* ESTRUCTURA CONDICIONAL PRIORITARIA */}
-                {invitacionPendiente ? (
-                    <div className="mb-8 p-8 bg-indigo-900/30 border border-indigo-500/50 rounded-2xl text-center">
-                        <h2 className="text-white text-2xl font-bold mb-4">¡Tenés una invitación!</h2>
-                        <p className="text-indigo-200 mb-6">Te invitaron a unirte al hogar: <strong>{invitacionPendiente.hogares?.codigo}</strong></p>
-                        <AceptarInvitacion
-                            invitacion={invitacionPendiente}
-                            onAceptado={() => {
-                                // Esto fuerza al contexto a recargar todo desde cero
-                                window.location.reload();
-                            }}
-                        />
-                    </div>
-                ) : !hogarId ? (
+                {/* ESTRUCTURA CONDICIONAL SECUNDARIA (SI NO TIENE HOGAR) */}
+                {!hogarId ? (
                     <div className="text-center py-20">
                         <h2 className="text-2xl text-slate-100 font-bold mb-6">Aún no pertenecés a ningún hogar</h2>
                         <SetupHogar
@@ -157,6 +168,9 @@ export default function Dashboard() {
                     <>
                         <h1 className="text-4xl font-black mb-10 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
                         <p className="text-slate-400 mb-6">Estás gestionando el hogar: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
+                            <div className="mb-12">
+                                <InvitarColaborador hogarId={hogarId} />
+                            </div>
 
                         <ResumenDeudas gastos={gastos} />
 
@@ -180,7 +194,11 @@ export default function Dashboard() {
                                 <CategoriaForm
                                     hogarId={hogarId}
                                     categoriaEditando={categoriaEditando}
-                                    onGuardar={() => { traerCategorias(); setCategoriaEditando(null); }}
+                                    onGuardar={() => { 
+                                        traerCategorias(); 
+                                        traerGastos(); 
+                                        setCategoriaEditando(null); 
+                                    }}
                                     onCancelar={() => setCategoriaEditando(null)}
                                     onEliminar={async (id) => {
                                         if (!window.confirm("¿Seguro querés eliminar esta categoría?")) return;
@@ -196,10 +214,10 @@ export default function Dashboard() {
                                     onGuardar={() => { setGastoEditando(null); traerGastos(); }}
                                     onCancelar={() => setGastoEditando(null)}
                                 />
-                                <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
+                                {/* <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
                                     <h3 className="text-sm font-bold text-slate-400 mb-4">Invitar colaborador</h3>
                                     <InvitarColaborador hogarId={hogarId} />
-                                </div>
+                                </div> */}
                             </div>
 
                             <div className="md:col-span-7">

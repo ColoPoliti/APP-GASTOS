@@ -193,11 +193,34 @@ export default function DashboardOld() {
             onChange={(e) => setTempHogar(e.target.value.toUpperCase())}
           />
 
-          <button
+        <button
             onClick={async () => {
               if (!tempHogar) return;
-              await supabase.from('perfiles').update({ hogar_id: tempHogar }).eq('id', sesion.user.id);
-              setHogarId(tempHogar); // Esto actualiza el estado y refresca el Dashboard sin recargar
+
+              // 1. Buscamos el hogar por su código de texto (ej: GASTOS-COLOS) para obtener su UUID real
+              const { data: hogarEncontrado, error: errorHogar } = await supabase
+                .from('hogares')
+                .select('id')
+                .eq('codigo', tempHogar)
+                .single();
+
+              if (errorHogar || !hogarEncontrado) {
+                alert("El código de hogar no existe o es inválido.");
+                return;
+              }
+
+              // 2. Actualizamos el perfil del usuario logueado con el UUID correcto
+              const { error: errorPerfil } = await supabase
+                .from('perfiles')
+                .update({ hogar_id: hogarEncontrado.id })
+                .eq('id', sesion.user.id);
+
+              if (errorPerfil) {
+                alert("Error al vincular: " + errorPerfil.message);
+                return;
+              }
+
+              setHogarId(hogarEncontrado.id); // Actualizamos el estado con el UUID real
             }}
             className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold hover:bg-indigo-500 transition-all"
           >
@@ -266,7 +289,7 @@ export default function DashboardOld() {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-5 space-y-6">
-              <section className="bg-amber-400 border dark:bg-slate-900/30 border-slate-900 p-5 rounded-xl">
+              <section className=" border dark:bg-slate-900/30 border-slate-900 p-5 rounded-xl">
                 <h3 className="text-sm font-bold uppercase mb-3">{idCategoriaEditando ? 'Editar Categoría' : 'Nueva Categoría'}</h3>
                 <form onSubmit={guardarCategoria} className="flex gap-2">
                   <input type="text" value={nuevaCategoria} onChange={(e) => setNuevaCategoria(e.target.value)} className="flex-1 bg-slate-900 border border-slate-800 rounded-lg p-2.5 uppercase" />
