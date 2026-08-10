@@ -1,7 +1,7 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import SideBar from './components/SideBar';
+import Sidebar from './components/Sidebar';
 import Dashboard from './pages/DashboardRefact.jsx';
 import Login from './pages/Login';
 import Graficos from './pages/Graficos';
