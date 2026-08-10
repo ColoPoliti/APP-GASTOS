@@ -25,6 +25,8 @@ export default function SetupHogar({ userId, onHogarSet }) {
   }, [tempHogar]);
 
   // 2. Unificar la carga de hogares (propios + invitados)
+  // 2. Unificar la carga de hogares (propios + invitados) sin duplicados
+// 2. Unificar la carga de hogares (propios + invitados) sin duplicados
   useEffect(() => {
     const fetchTodosLosHogares = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -42,11 +44,17 @@ export default function SetupHogar({ userId, onHogarSet }) {
         .select('hogares(id, codigo)')
         .eq('email_invitado', user.email);
 
-      const listaCombinada = [
+      const listaRaw = [
         ...(creados || []),
         ...(invitaciones?.map(i => i.hogares).filter(h => h !== null) || [])
       ];
-      setMisHogares(listaCombinada);
+
+      // Filtramos duplicados basándonos en el 'id' del hogar
+      const listaUnica = Array.from(
+        new Map(listaRaw.map(hogar => [hogar.id, hogar])).values()
+      );
+
+      setMisHogares(listaUnica);
     };
     fetchTodosLosHogares();
   }, [userId]);
