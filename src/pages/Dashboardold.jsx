@@ -234,7 +234,7 @@ export default function DashboardOld() {
       <div className={`${esModoOscuro ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="flex h-screen items-center justify-center bg-slate-950 p-4">
           <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full">
-            <h2 className="text-white text-xl font-bold mb-4">¡Bienvenido!</h2>
+            <h2 className="text-white text-xl font-bold mb-4">¡Bienvenido!sssssssss</h2>
             <p className="text-slate-400 mb-6 text-sm">Ingresá el código de tu hogar:</p>
             <input className="w-full p-2 mb-4 bg-slate-950 text-white border border-slate-700 rounded-lg uppercase" placeholder="Ej: GASTOS-COLOS" onChange={(e) => { tempHogar = e.target.value.toUpperCase(); }} />
             <button onClick={async () => { if (!tempHogar) return; await supabase.from('perfiles').update({ hogar_id: tempHogar }).eq('id', sesion.user.id); window.location.reload(); }} className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold">Confirmar y Activar Panel</button>
@@ -280,7 +280,7 @@ export default function DashboardOld() {
                 return (
                   <div key={index} className="p-4 border" style={estilo}>
                     <span className="block text-[10px] uppercase font-bold opacity-80">{item.nombre}</span>
-                    <div className="text-2xl font-black font-mono">${item.total.toLocaleString('es-AR')}</div>
+                    <div className="text-2xl font-black">${item.total.toLocaleString('es-AR')}</div>
                   </div>
                 );
               })}
@@ -362,7 +362,7 @@ export default function DashboardOld() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <div className="font-bold text-2xl font-mono">${parseFloat(gasto.monto).toLocaleString('es-AR')}</div>
+                          <div className="font-bold text-2xl ">${parseFloat(gasto.monto).toLocaleString('es-AR')}</div>
 
                           {/* Si es propietario, mostramos los botones. Si no, podemos poner un candadito o nada */}
                           {esPropietario ? (

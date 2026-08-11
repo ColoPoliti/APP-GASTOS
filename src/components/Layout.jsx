@@ -18,7 +18,7 @@ export default function Layout() {
         </div>
 
         {/* Contenido Principal */}
-        <main className={`flex-1 overflow-y-auto transition-all pt-16 duration-300 pb-16 md:pb-0 ${expanded ? 'md:ml-64' : 'md:ml-20'}`}>
+        <main className={`flex-1 overflow-y-auto transition-all duration-300 pb-16 md:pb-0 ${expanded ? 'md:ml-64' : 'md:ml-20'}`}>
           <Outlet />
         </main>
       </div>

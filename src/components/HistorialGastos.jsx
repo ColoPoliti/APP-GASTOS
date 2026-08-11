@@ -38,7 +38,7 @@ export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="font-bold text-2xl font-mono text-white">
+              <div className="font-bold text-2xl text-white">
                 ${parseFloat(gasto.monto).toLocaleString('es-AR')}
               </div>
               

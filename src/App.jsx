@@ -12,7 +12,7 @@ import { UserProvider, useUser } from './context/UserContext.jsx';
 import SetupHogar from "./components/SetupHogar";
 import PaginaHistorial from './pages/PaginaHistorial';
 import { AuthProvider } from './context/AuthContext';
-import { ClipLoader } from 'react-spinners';
+import { BounceLoader } from 'react-spinners';
 
 function AppContent() {
   const { sesion, loading, hogarId } = useUser();
@@ -20,7 +20,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="flex h-screen bg-slate-950 items-center justify-center">
-        <ClipLoader color="#ffffff" size={50} />
+        <BounceLoader color="#ffffff" size={60} />
       </div>
     );
   }

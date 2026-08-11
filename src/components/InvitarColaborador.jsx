@@ -35,7 +35,7 @@ export default function InvitarColaborador({ hogarId }) {
 
   return (
     <div className="flex items-center  gap-4">
-      <span className="text-sm font-bold text-white">Invitar colaborador</span>
+      <span className="text-xl font-bold text-white">Invitar colaborador</span>
 
       {/* Botón circular con texto y ícono */}
       <button 

@@ -151,7 +151,7 @@ export default function Dashboard() {
     if (cargandoInvitacion || loading) {
         return (
             <div className="min-h-screen dark:bg-slate-950 bg-white flex items-center justify-center text-slate-400">
-                Cargando...
+
             </div>
         );
     }
@@ -197,13 +197,27 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <>
-                        <h1 className="text-4xl font-black mb-10 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
-                        <p className="text-slate-400 mb-6">Estás gestionando el hogar: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
                         <div className="mb-12">
-                            <InvitarColaborador hogarId={hogarId} />
-                        </div>
+    {/* Fila superior: Saludo a la izquierda y botón de invitar a la derecha */}
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h1 className="text-4xl font-black mb-2 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
+            <p className="text-slate-400">Estás gestionando el hogar: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
+        </div>
+        
+        <div className="w-full md:w-auto">
+            <InvitarColaborador hogarId={hogarId} />
+        </div>
+    </div>
 
-                        <ResumenDeudas gastos={gastos} transferencias={transferencias} />
+    {/* Línea divisoria */}
+    <hr className="border-slate-800 my-6" />
+
+    {/* Resumen de deudas abajo */}
+    <ResumenDeudas gastos={gastos} transferencias={transferencias} />
+</div>
+
+
                         <div className="flex justify-end my-20">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-end items-start mt-6 mb-6">
 
@@ -264,7 +278,7 @@ export default function Dashboard() {
                                         return (
                                             <div key={cat.id} className="p-4 border rounded-xl relative group w-full" style={obtenerEstiloCategoria(cat, true)}>
                                                 <span className="block text-[10px] uppercase font-bold opacity-80">{cat.nombre}</span>
-                                                <div className="text-2xl font-black font-mono">${total.toLocaleString('es-AR')}</div>
+                                                <div className="text-2xl font-black">${total.toLocaleString('es-AR')}</div>
                                                 <button onClick={() => setCategoriaEditando(cat)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
                                                     <FaPen size={12} />
                                                 </button>
