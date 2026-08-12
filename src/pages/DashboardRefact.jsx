@@ -12,9 +12,13 @@ import SetupHogar from '../components/SetupHogar';
 import InvitarColaborador from '../components/InvitarColaborador';
 import AceptarInvitacion from '../components/AceptarInvitacion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { obtenerEstiloCategoria, obtenerEstiloCategoriaComun } from "../utils/gastosUtils";
 
 export default function Dashboard() {
     const { loading, sesion, hogarId, nombreUsuario, nombreHogar } = useUser();
+    const { theme } = useTheme();
+
+
     const [cargandoInvitacion, setCargandoInvitacion] = useState(true);
     const [invitacionPendiente, setInvitacionPendiente] = useState(null);
     const [tabActiva, setTabActiva] = useState('todos');
@@ -106,12 +110,14 @@ export default function Dashboard() {
     useEffect(() => {
         console.log("Transferencias cargadas en el estado:", transferencias);
     }, [transferencias]);
+
     const eliminarTransferencia = async (id) => {
         if (!window.confirm("¿Seguro querés eliminar esta transferencia?")) return;
         const { error } = await supabase.from('transferencias').delete().eq('id', id);
         if (error) alert("Error al eliminar: " + error.message);
         else traerTransferencias();
     };
+
     const iniciarEdicion = (gasto) => setGastoEditando(gasto);
 
     const eliminarGasto = async (gasto) => {
@@ -121,27 +127,7 @@ export default function Dashboard() {
         else traerGastos();
     };
 
-    const obtenerEstiloCategoria = (categoria, conBordeIzquierdo = false) => {
-        const color = categoria?.color || '#6366f1';
-
-        if (conBordeIzquierdo) {
-            return {
-                backgroundColor: `${color}20`,
-                color: color,
-                borderTop: `1px solid ${color}50`,
-                borderRight: `1px solid ${color}50`,
-                borderBottom: `1px solid ${color}50`,
-                borderLeft: `7px solid ${color}`
-            };
-        }
-
-        return {
-            backgroundColor: `${color}20`,
-            color: color,
-            border: `1px solid ${color}50`
-        };
-    };
-
+ 
     const gastosFiltrados = tabActiva === 'todos'
         ? gastos
         : gastos.filter(g => (g.perfiles?.nombre || g.perfiles?.email || 'Invitado') === tabActiva);
@@ -151,17 +137,15 @@ export default function Dashboard() {
     if (cargandoInvitacion || loading) {
         return (
             <div className="min-h-screen dark:bg-slate-950 bg-white flex items-center justify-center text-slate-400">
-
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen dark:bg-slate-950 bg-white text-dark transition-colors pt-16 duration-300 pb-20 relative">
-
+        <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors pt-16 duration-300 pb-20 relative">
 
             {invitacionPendiente && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
                     <div className="w-full max-w-md bg-slate-900 border border-indigo-500/50 rounded-2xl p-6 shadow-2xl text-center space-y-6 my-auto">
                         <div className="w-12 h-12 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
                             ✉️
@@ -186,7 +170,6 @@ export default function Dashboard() {
 
             <div className="max-w-6xl mx-auto px-4 py-6">
 
-                {/* ESTRUCTURA CONDICIONAL SECUNDARIA (SI NO TIENE HOGAR) */}
                 {!hogarId ? (
                     <div className="text-center py-20">
                         <h2 className="text-2xl text-slate-100 font-bold mb-6">Aún no pertenecés a ningún hogar</h2>
@@ -198,30 +181,25 @@ export default function Dashboard() {
                 ) : (
                     <>
                         <div className="mb-12">
-    {/* Fila superior: Saludo a la izquierda y botón de invitar a la derecha */}
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <h1 className="text-4xl font-black mb-2 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
-            <p className="text-slate-400">Estás gestionando el hogar: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
-        </div>
-        
-        <div className="w-full md:w-auto">
-            <InvitarColaborador hogarId={hogarId} />
-        </div>
-    </div>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                <div>
+                                    <h1 className="text-4xl font-black mb-2 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
+                                    <p className="text-slate-400">Estás gestionando el hogar: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
+                                </div>
 
-    {/* Línea divisoria */}
-    <hr className="border-slate-800 my-6" />
+                                <div className="w-full md:w-auto">
+                                    <InvitarColaborador hogarId={hogarId} />
+                                </div>
+                            </div>
 
-    {/* Resumen de deudas abajo */}
-    <ResumenDeudas gastos={gastos} transferencias={transferencias} />
-</div>
+                            <hr className="border-slate-800 my-6" />
 
+                            <ResumenDeudas gastos={gastos} transferencias={transferencias} />
+                        </div>
 
                         <div className="flex justify-end my-20">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-end items-start mt-6 mb-6">
 
-                                {/* Columna 1: Formulario de Categorías */}
                                 <div className="ml-auto w-full max-w-md">
                                     <CategoriaForm
                                         hogarId={hogarId}
@@ -240,7 +218,6 @@ export default function Dashboard() {
                                     />
                                 </div>
 
-                                {/* Columna 2: Formulario de Gastos */}
                                 <div className="ml-auto w-full max-w-md">
                                     <GastoForm
                                         categorias={categorias}
@@ -252,7 +229,6 @@ export default function Dashboard() {
                                     />
                                 </div>
 
-                                {/* Columna 3: Formulario de Transferencias */}
                                 <div className="ml-auto w-full max-w-md">
                                     <TransferenciaForm
                                         hogarId={hogarId}
@@ -264,9 +240,9 @@ export default function Dashboard() {
 
                             </div>
                         </div>
+
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-10 items-start">
 
-                            {/* Columna izquierda: Categorías en formato vertical (30% / 4 columnas) */}
                             <div className="lg:col-span-4 space-y-3">
                                 <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">
                                     📁 Categorías
@@ -276,7 +252,8 @@ export default function Dashboard() {
                                     {categorias.map(cat => {
                                         const total = gastos.filter(g => g.categoria_id === cat.id).reduce((acc, g) => acc + (parseFloat(g.monto) || 0), 0);
                                         return (
-                                            <div key={cat.id} className="p-4 border rounded-xl relative group w-full" style={obtenerEstiloCategoria(cat, true)}>
+                                            /* 3. Le pasamos el theme actual aquí abajo */
+                                            <div key={cat.id} className="p-4 border rounded-xl relative group w-full" style={obtenerEstiloCategoria(cat, theme, true)}>
                                                 <span className="block text-[10px] uppercase font-bold opacity-80">{cat.nombre}</span>
                                                 <div className="text-2xl font-black">${total.toLocaleString('es-AR')}</div>
                                                 <button onClick={() => setCategoriaEditando(cat)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
@@ -288,7 +265,6 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            {/* Columna derecha: Tabs + Historial de Gastos (70% / 8 columnas) */}
                             <div className="lg:col-span-8">
                                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
                                     <button
@@ -317,7 +293,6 @@ export default function Dashboard() {
                             </div>
 
                         </div>
-
 
                         {transferencias.map(t => (
                             <div key={t.id} className="flex mt-6 justify-between items-center p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm">

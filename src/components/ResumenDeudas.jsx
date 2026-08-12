@@ -56,7 +56,7 @@ export default function ResumenDeudas({ gastos, transferencias }) {
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
 
         {/* Columna 1: ¿Quién le debe a quién? */}
-        <section className="p-5  border border-slate-800 bg-slate-900/60 backdrop-blur-sm flex flex-col justify-between shadow-lg">
+        <section className="p-5  border border-slate-800 bg-white dark:bg-slate-900/60 backdrop-blur-sm flex flex-col justify-between shadow-lg">
           <div>
             <div className="space-y-3">
               {mensajesDeuda.map((mensaje, index) => {
@@ -94,7 +94,7 @@ export default function ResumenDeudas({ gastos, transferencias }) {
 
                             <div className="flex items-center space-x-3 flex-shrink-0">
                               {/* El Badge del monto a la derecha, bien destacado */}
-                              <div className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 px-3.5 py-1.5 rounded-xl text-lg sm:text-xl font-black shadow-inner">
+                              <div className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 px-3.5 py-1.5 rounded-xl text-lg sm:text-3xl font-black shadow-inner">
                                 {monto}
                               </div>
 
@@ -113,11 +113,9 @@ export default function ResumenDeudas({ gastos, transferencias }) {
                   </div>
                 );
               })}
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span>📊</span> 
-              </h3>
+           
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-2 gap-3">
                 {Object.entries(totalesPorUsuario).map(([nombre, total]) => (
                   <div key={nombre} className="bg-slate-950/60 border border-slate-800/80 p-3.5 flex flex-col justify-center rounded-2xl relative">
                     <div className="flex items-center space-x-2 mb-1">

@@ -1,7 +1,7 @@
 export const calcularDeudas = (gastos, transferencias = []) => {
+    // ... (todo el código de deudas dejalo tal cual lo tenés, está perfecto)
     if (!gastos || gastos.length === 0) return ["No hay gastos cargados aún."];
 
-    // 1. Mapeamos los IDs a nombres reales
     const mapaNombres = {};
     gastos.forEach(g => {
         if (g.perfiles?.id) {
@@ -9,7 +9,6 @@ export const calcularDeudas = (gastos, transferencias = []) => {
         }
     });
 
-    // 2. Acumulamos EXCLUSIVAMENTE los gastos de cada usuario (para aplicar la división justa por 2)
     const saldosGastos = {};
     gastos.forEach(g => {
         const id = g.perfiles?.id || 'invitado';
@@ -21,7 +20,7 @@ export const calcularDeudas = (gastos, transferencias = []) => {
 
     const idA = idsUsuarios[0];
     const idB = idsUsuarios[1];
-    
+
     const nombreA = mapaNombres[idA] || idA;
     const nombreB = mapaNombres[idB] || idB;
 
@@ -31,34 +30,27 @@ export const calcularDeudas = (gastos, transferencias = []) => {
     const totalGeneralGastos = totalGastosA + totalGastosB;
     const cuotaIdeal = totalGeneralGastos / 2;
 
-    // Balance neto puramente de los gastos (cuánto puso cada uno vs su cuota ideal)
-    let balanceA = totalGastosA - cuotaIdeal; 
-    let balanceB = totalGastosB - cuotaIdeal; 
+    let balanceA = totalGastosA - cuotaIdeal;
+    let balanceB = totalGastosB - cuotaIdeal;
 
-    // 3. APLICAMOS LAS TRANSFERENCIAS ENTERAS (sin dividir por 2)
-    // La transferencia es un pago directo que reduce la deuda del que la envió.
     transferencias.forEach(t => {
         const montoTransferido = parseFloat(t.monto) || 0;
         const emisorId = String(t.enviado_por);
 
         if (emisorId === String(idA)) {
-            // Si A envió plata, su saldo a favor sube o su deuda baja directamente por el total
             balanceA += montoTransferido;
             balanceB -= montoTransferido;
         } else if (emisorId === String(idB)) {
-            // Si B envió plata, su saldo a favor sube o su deuda baja directamente por el total
             balanceB += montoTransferido;
             balanceA -= montoTransferido;
         }
     });
 
-    // Redondeamos para evitar problemas de decimales flotantes (ej: 0.00000005)
     balanceA = Math.round(balanceA * 100) / 100;
     balanceB = Math.round(balanceB * 100) / 100;
 
     if (Math.abs(balanceA) < 1 && Math.abs(balanceB) < 1) return ["¡Todo está saldado!"];
 
-    // 4. Determinamos quién le debe a quién según el balance final ajustado
     if (balanceA < 0 && balanceB > 0) {
         return [`${nombreA} debe pagar $${Math.abs(balanceA).toLocaleString('es-AR')} a ${nombreB}`];
     } else if (balanceB < 0 && balanceA > 0) {
@@ -74,24 +66,37 @@ export const calcularDeudas = (gastos, transferencias = []) => {
     return ["¡Todo está saldado!"];
 };
 
-export const obtenerEstiloCategoria = (categoria, conBordeIzquierdo = false) => {
+export const obtenerEstiloCategoria = (categoria, theme, conBordeIzquierdo = false) => {
     const color = categoria?.color || '#6366f1';
-    const baseStyle = {
-        backgroundColor: `${color}20`,
-        color: color,
-        border: `1px solid ${color}50`,
-        fontSize: '0.875rem',
-        fontWeight: '700'
-    };
+    
+    // Aquí definimos esDarkMode basándonos en la lógica anterior
+    const currentTheme = theme || (typeof window !== 'undefined' ? localStorage.getItem('theme') : 'light');
+    const esDarkMode = currentTheme === 'dark';
+
     if (conBordeIzquierdo) {
-        return { 
-            ...baseStyle, 
-            borderLeftWidth: '7px', 
-            borderLeftStyle: 'solid', 
-            borderLeftColor: color, 
-            fontSize: '3rem', 
-            fontWeight: '700' 
+        return {
+            backgroundColor: esDarkMode ? `${color}15` : '#ffffff',
+            color: esDarkMode ? color : '#1e293b',
+            borderTop: esDarkMode ? `1px solid ${color}40` : '1px solid #e2e8f0',
+            borderRight: esDarkMode ? `1px solid ${color}40` : '1px solid #e2e8f0',
+            borderBottom: esDarkMode ? `1px solid ${color}40` : '1px solid #e2e8f0',
+            borderLeft: `7px solid ${color}`,
+            boxShadow: esDarkMode
+                ? '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)'
+                : '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
         };
     }
-    return baseStyle;
+
+};
+
+export const obtenerEstiloCategoriaComun = (categoria, theme) => {
+    const color = categoria?.color || '#6366f1';
+    const currentTheme = theme || (typeof window !== 'undefined' ? localStorage.getItem('theme') : 'light');
+    const esDarkMode = currentTheme === 'dark';
+
+    return {
+        backgroundColor: esDarkMode ? `${color}20` : `${color}`,
+        color: esDarkMode ? color : `#333`,
+        border: `1px solid ${color}40`,
+    };
 };

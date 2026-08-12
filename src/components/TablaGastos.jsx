@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { useTheme } from "../context/ThemeContext";
+import { obtenerEstiloCategoria } from "../utils/gastosUtils";
 import {
     useReactTable,
     getCoreRowModel,

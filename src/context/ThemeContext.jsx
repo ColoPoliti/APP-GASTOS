@@ -3,12 +3,15 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Inicializamos con 'light' o 'dark' (puedes leer de localStorage)
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
 
- useEffect(() => {
+  useEffect(() => {
     const root = window.document.documentElement;
-    
     if (theme === 'dark') {
       root.classList.add('dark');
     } else {
@@ -18,7 +21,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (

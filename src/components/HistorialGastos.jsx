@@ -1,7 +1,10 @@
 import { FaPen, FaTrash, FaLock } from "react-icons/fa";
-import { obtenerEstiloCategoria } from "../utils/gastosUtils";
+import { useTheme } from "../context/ThemeContext";
+import { obtenerEstiloCategoriaComun, obtenerEstiloCategoria } from "../utils/gastosUtils";
 
 export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar }) {
+  // ¡Acá está la magia que faltaba! Declaramos el theme para que la línea 29 no explote
+  const { theme } = useTheme();
   
   if (!gastos || gastos.length === 0) {
     return (
@@ -14,22 +17,21 @@ export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar
   return (
     <div className="space-y-3">
       {gastos.map((gasto) => {
-        // Aseguramos la comparación de IDs
         const esPropietario = String(gasto.pagado_por) === String(sesionId);
 
         return (
           <div 
             key={gasto.id} 
-            className="dark:bg-slate-900/20 border border-slate-900 p-4 rounded-xl flex justify-between items-center transition-all hover:border-indigo-500/50"
+            className="bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex justify-between items-center transition-all hover:border-indigo-500/50 shadow-sm"
           >
             <div>
               <span 
-                className="text-[14px] px-2 py-0.5 rounded-md uppercase font-bold border" 
-                style={obtenerEstiloCategoria(gasto.categorias)}
+                className="text-[14px] px-2.5 py-0.5 rounded-md uppercase font-bold border inline-block" 
+                style={obtenerEstiloCategoriaComun(gasto.categorias, theme)}
               >
                 {gasto.categorias?.nombre || 'Sin categoría'}
               </span>
-              <p className="text-sm mt-1 text-slate-300">
+              <p className="text-sm mt-1 text-slate-900 dark:text-slate-300">
                 {gasto.descripcion}
                 <span className="text-[10px] text-slate-500 ml-2 italic">
                   - {gasto.perfiles?.nombre || 'Invitado'}
@@ -38,7 +40,7 @@ export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="font-bold text-2xl text-white">
+              <div className="font-bold text-2xl text-slate-900 dark:text-white">
                 ${parseFloat(gasto.monto).toLocaleString('es-AR')}
               </div>
               
@@ -58,7 +60,7 @@ export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar
                   </button>
                 </div>
               ) : (
-                <span className="text-slate-700 text-xs">
+                <span className="text-slate-400 dark:text-slate-700 text-xs">
                   <FaLock />
                 </span>
               )}

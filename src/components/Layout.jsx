@@ -9,7 +9,7 @@ export default function Layout() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="min-h-screen dark:bg-slate-950 bg-white text-dark transition-colors duration-300 pb-20">
+    <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors duration-300 pb-20">
         <Navbar />
       <div className="flex flex-1 ">
         {/* Sidebar: Solo visible en PC (md) */}
