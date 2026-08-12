@@ -114,7 +114,7 @@ export default function ResumenDeudas({ gastos, transferencias }) {
                 );
               })}
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span>📊</span> Consumo Total por Usuario
+                <span>📊</span> 
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
