@@ -13,11 +13,13 @@ import InvitarColaborador from '../components/InvitarColaborador';
 import AceptarInvitacion from '../components/AceptarInvitacion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { obtenerEstiloCategoria, obtenerEstiloCategoriaComun } from "../utils/gastosUtils";
+import { obtenerColorTextoIdeal } from '../utils/colorUtils';
+
 
 export default function Dashboard() {
     const { loading, sesion, hogarId, nombreUsuario, nombreHogar } = useUser();
+ 
     const { theme } = useTheme();
-
 
     const [cargandoInvitacion, setCargandoInvitacion] = useState(true);
     const [invitacionPendiente, setInvitacionPendiente] = useState(null);
@@ -252,7 +254,6 @@ export default function Dashboard() {
                                     {categorias.map(cat => {
                                         const total = gastos.filter(g => g.categoria_id === cat.id).reduce((acc, g) => acc + (parseFloat(g.monto) || 0), 0);
                                         return (
-                                            /* 3. Le pasamos el theme actual aquí abajo */
                                             <div key={cat.id} className="p-4 border rounded-xl relative group w-full" style={obtenerEstiloCategoria(cat, theme, true)}>
                                                 <span className="block text-[10px] uppercase font-bold opacity-80">{cat.nombre}</span>
                                                 <div className="text-2xl font-black">${total.toLocaleString('es-AR')}</div>
