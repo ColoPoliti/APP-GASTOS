@@ -1,3 +1,5 @@
+import { obtenerColorTextoIdeal } from './colorUtils';
+
 export const calcularDeudas = (gastos, transferencias = []) => {
     // ... (todo el código de deudas dejalo tal cual lo tenés, está perfecto)
     if (!gastos || gastos.length === 0) return ["No hay gastos cargados aún."];
@@ -88,15 +90,19 @@ export const obtenerEstiloCategoria = (categoria, theme, conBordeIzquierdo = fal
     }
 
 };
-
 export const obtenerEstiloCategoriaComun = (categoria, theme) => {
     const color = categoria?.color || '#6366f1';
     const currentTheme = theme || (typeof window !== 'undefined' ? localStorage.getItem('theme') : 'light');
     const esDarkMode = currentTheme === 'dark';
 
+    const backgroundColor = esDarkMode ? `${color}25` : color;
+    
+    // Mix: En modo oscuro respeta el color original, y en modo claro usa tu lógica de contraste ideal
+    const textColor = esDarkMode ? color : obtenerColorTextoIdeal(color);
+
     return {
-        backgroundColor: esDarkMode ? `${color}20` : `${color}`,
-        color: esDarkMode ? color : `#333`,
-        border: `1px solid ${color}40`,
+        backgroundColor: backgroundColor,
+        color: textColor,
+        borderColor: `${color}40`,
     };
 };

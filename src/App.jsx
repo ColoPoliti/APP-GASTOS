@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 import { UserProvider, useUser } from './context/UserContext.jsx'; 
 import SetupHogar from "./components/SetupHogar";
 import PaginaHistorial from './pages/PaginaHistorial';
+import PaginaGestionGastos from './pages/PaginaGestionGastos';
 import { AuthProvider } from './context/AuthContext';
 import { BounceLoader } from 'react-spinners';
 
@@ -40,6 +41,7 @@ function AppContent() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/graficos" element={<Graficos />} />
               <Route path="/historial" element={<PaginaHistorial />} />
+              <Route path="/gestion-gastos" element={<PaginaGestionGastos />} />
             </Route>
           </Routes>
         </main>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { GiTakeMyMoney } from "react-icons/gi";
 
 export default function TransferenciaForm({ hogarId, sesionId, miembros = [], onGuardar }) {
   const [monto, setMonto] = useState('');
@@ -46,7 +47,7 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
         onClick={() => setIsOpen(true)}
         className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20"
       >
-        <span>💸</span> Registrar Transferencia
+        <span><GiTakeMyMoney /></span> Registrar Transferencia
       </button>
 
       {/* Modal flotante */}

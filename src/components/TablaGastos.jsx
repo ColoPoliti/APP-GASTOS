@@ -11,34 +11,6 @@ import {
     flexRender,
 } from '@tanstack/react-table';
 
-function obtenerColorTexto(hexColor) {
-if (!hexColor) return '#000000';
-function obtenerColorTexto(hexColor) {
-    if (!hexColor) return '#000000';
-    let limpio = hexColor.replace('#', '').toLowerCase();
-    
-    if (limpio.length === 3) {
-        limpio = limpio.split('').map(c => c + c).join('');
-    }
-
-    const r = parseInt(limpio.substr(0, 2), 16) || 0;
-    const g = parseInt(limpio.substr(2, 2), 16) || 0;
-    const b = parseInt(limpio.substr(4, 2), 16) || 0;
-
-    // Calculamos luminancia real pero exigente
-    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-
-    // Únicamente si el color es OSCURO DE VERDAD (como tus servicios violeta/azul oscuro), usamos blanco.
-    // Todo lo demás (verdes, amarillos, celestes, pasteles, grises claros) va con NEGRO SÍ O SÍ.
-    if (yiq < 110) {
-        return '#ffffff';
-    }
-
-    return '#000000';
-}
-}
-
-
 export default function TablaGastos({ gastos }) {
     const [sorting, setSorting] = React.useState([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
@@ -51,36 +23,26 @@ export default function TablaGastos({ gastos }) {
             accessorFn: (row) => row.perfiles?.nombre || 'Invitado',
             cell: (info) => info.getValue(),
         },
-{
-    header: 'Categoría',
-    accessorKey: 'categorias.nombre',
-    cell: (info) => {
-        const cat = info.row.original.categorias;
-        if (!cat) return <span className="text-slate-600 dark:text-slate-500 text-xs italic">Sin cat.</span>;
+        {
+            header: 'Categoría',
+            accessorKey: 'categorias.nombre',
+            cell: (info) => {
+                const cat = info.row.original.categorias;
+                if (!cat) return <span className="text-slate-600 dark:text-slate-500 text-xs italic">Sin cat.</span>;
 
-        // Agarramos el color directo de la base de datos (o un azul por defecto)
-        const bgColor = cat.color || '#3b82f6';
-        
-        
-        // Forzamos el color de texto según el fondo real
-        // Si el color es amarillo (#ffff00 o similar) o brillante, texto negro; sino blanco
-        const esClaro = bgColor.toLowerCase().includes('ffff') || bgColor.toLowerCase().includes('fde047') || bgColor.toLowerCase().includes('facc15') || bgColor.toLowerCase().includes('4ade80');
-        const textColor = esClaro ? '#000000' : '#ffffff';
+                // Aplicamos la función unificada que maneja el tema claro/oscuro y el contraste
+                const estiloCategoria = obtenerEstiloCategoriaComun(cat, theme);
 
-        return (
-            <span
-                className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase inline-block shadow-sm"
-                style={{
-                    backgroundColor: bgColor,
-                    color: textColor, // <--- Lo forzamos acá inline para que ninguna otra función lo pise
-                    borderColor: 'transparent'
-                }}
-            >
-                {cat.nombre}
-            </span>
-        );
-    }
-},
+                return (
+                    <span
+                        className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase inline-block shadow-sm"
+                        style={estiloCategoria}
+                    >
+                        {cat.nombre}
+                    </span>
+                );
+            }
+        },
         { 
             accessorKey: 'descripcion', 
             header: 'Descripción',
@@ -184,8 +146,7 @@ export default function TablaGastos({ gastos }) {
                 </table>
             </div>
 
-            {/* Paginación avanzada */}
-            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 border-t border-slate-200 dark:border-slate-700 pt-4 gap-4">
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span>
                         Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de{' '}

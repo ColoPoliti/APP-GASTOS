@@ -2,14 +2,16 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { PieChart, Pie, Sector, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 import { ClipLoader } from 'react-spinners';
+import { obtenerEstiloCategoriaComun } from "../utils/gastosUtils";
 import { obtenerColorTextoIdeal } from '../utils/colorUtils';
+
 
 const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4'];
 
 // Función que dibuja la porción activa (agrandada) con su etiqueta flotante adaptable
 const renderActiveShape = (props) => {
-    // Detectamos si el documento tiene la clase 'dark' para los colores dinámicos
     const isDark = document.documentElement.classList.contains('dark');
     const mainTextColor = isDark ? '#ffffff' : '#0f172a';
     const subTextColor = isDark ? '#cbd5e1' : '#334155';
@@ -62,6 +64,7 @@ const renderActiveShape = (props) => {
 
 export default function Graficos() {
     const { hogarId } = useUser();
+    const { theme } = useTheme();
     const [gastos, setGastos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -131,17 +134,19 @@ export default function Graficos() {
     const totalGeneral = dataGrafico.reduce((acc, curr) => acc + curr.value, 0);
 
     return (
-        <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 my-6 text-xs">
-            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-6 text-center">
-                Distribución de Gastos por Categoría
-            </h3>
+        <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
+             <div className="mb-8">
+                <h1 className="text-3xl font-black mb-1  mt-12 text-dark dark:text-slate-100">Gestión de Gastos</h1>
+                <p className="text-slate-400 text-sm">Distribución de Gastos por Categoría</p>
+            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
 
-                {/* Lado Izquierdo: Gráfico adaptable con altura responsive y radios porcentuales */}
-                <div className="w-full h-72 sm:h-96">
+                {/* Lado Izquierdo: Gráfico adaptable */}
+                <div className="w-full h-72 sm:h-96 outline-none focus:outline-none focus:ring-0">
                     <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <PieChart className="outline-none">
                             <Pie
                                 activeIndex={activeIndex}
                                 activeShape={renderActiveShape}
@@ -168,54 +173,62 @@ export default function Graficos() {
                     </ResponsiveContainer>
                 </div>
 
-                {/* Lado Derecho: Totales por categoría */}
-                <div className="flex flex-col space-y-3 p-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Detalle de Categorías</span>
+                {/* Lado Derecho: Lista de Categorías */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 overflow-y-auto pr-1">
+                    {dataGrafico.map((item, index) => {
+                        const colorFinal = item.color !== '#6366f1' ? item.color : COLORS[index % COLORS.length];
+                        const porcentaje = totalGeneral > 0 ? ((item.value / totalGeneral) * 100).toFixed(1) : 0;
+                        const isSelected = activeIndex === index;
+                        
+                        // Obtenemos los estilos adaptados a modo claro/oscuro con su color base y contraste
+                        const estiloComun = obtenerEstiloCategoriaComun({ color: colorFinal }, theme);
+                        
+                        // Forzamos que en modo claro use la función de texto ideal para mejor visibilidad, 
+                        // y en modo oscuro mantenga el estilo dinámico optimizado.
+                        const isDark = theme === 'dark' || (typeof window !== 'undefined' && localStorage.getItem('theme') === 'dark');
+                        const textColorFinal = isDark ? estiloComun.color : obtenerColorTextoIdeal(colorFinal);
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3  overflow-y-auto pr-1">
-                        {dataGrafico.map((item, index) => {
-                            const colorFinal = item.color !== '#6366f1' ? item.color : COLORS[index % COLORS.length];
-                            const porcentaje = totalGeneral > 0 ? ((item.value / totalGeneral) * 100).toFixed(1) : 0;
-                            const isSelected = activeIndex === index;
-                            
-                            // Calculamos el color ideal de contraste por cada categoría iterada
-                            const colorTextoIdeal = obtenerColorTextoIdeal(colorFinal);
-
-                            return (
-                                <div
-                                    key={index}
-                                    onMouseEnter={() => setActiveIndex(index)}
-                                    className={`flex items-center justify-between p-2.5 bg-white shadow dark:bg-slate-900 border transition-all cursor-pointer ${isSelected ? 'shadow shadow-indigo-500/10 bg-slate-850' : 'border-0'
-                                        }`}
-                                    style={{
-                                        borderColor: isSelected ? colorFinal : undefined
+                        return (
+                            <div
+                                key={index}
+                                onMouseEnter={() => setActiveIndex(index)}
+                                className={`relative overflow-hidden flex items-center justify-between p-3 bg-white dark:bg-slate-900/40 border transition-all cursor-pointer shadow-sm ${
+                                    isSelected 
+                                        ? 'border-2 shadow-md' 
+                                        : 'border-slate-200 dark:border-slate-800'
+                                }`}
+                                style={{
+                                    borderColor: isSelected ? colorFinal : undefined
+                                }}
+                            >
+                                {/* Bloque izquierdo aplicando el estilo unificado */}
+                                <span
+                                    className="absolute inset-y-0 left-0 px-3.5 flex items-center justify-center text-[16px] font-bold shadow-sm"
+                                    style={{ 
+                                        backgroundColor: estiloComun.backgroundColor,
+                                        color: textColorFinal,
+                                        borderRight: `1px solid ${colorFinal}40`
                                     }}
                                 >
-                                    <div className="flex items-center space-x-3">
-                                        <span
-                                            className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
-                                            style={{ backgroundColor: colorFinal }}
-                                        ></span>
-                                        <span 
-                                            className="text-sm font-bold" 
-                                            style={{ color: colorTextoIdeal }}
-                                        >
-                                            {item.name}
-                                        </span>
-                                    </div>
+                                    ({porcentaje}%)
+                                </span>
 
-                                    <div className="text-right">
-                                        <span className="text-sm font-bold dark:text-slate-200">
-                                            ${item.value.toLocaleString('es-AR')}
-                                        </span>
-                                        <span className="text-xs dark:text-slate-400 ml-2">
-                                            ({porcentaje}%)
-                                        </span>
-                                    </div>
+                                {/* Nombre de la categoría */}
+                                <div className="ml-24 flex items-center">
+                                    <span className="text-sm font-bold dark:text-white text-slate-950">
+                                        {item.name}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                {/* Monto a la derecha */}
+                                <div className="text-right">
+                                    <span className="text-sm font-bold text-slate-900 dark:text-slate-200">
+                                        ${item.value.toLocaleString('es-AR')}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
             </div>

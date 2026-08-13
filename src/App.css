@@ -11,3 +11,19 @@
   color:rgb(255, 255, 255) !important;
 }}}
 
+/* Elimina el outline de selección al hacer clic en cualquier elemento del gráfico o leyenda */
+button:focus, 
+div:focus, 
+span:focus,
+canvas:focus {
+    outline: none !important;
+}
+
+/* Específicamente para evitar bordes de foco en elementos interactivos de gráficos */
+*:focus-visible {
+    outline: none !important;
+}
+
+.recharts-wrapper *:focus {
+  outline: none !important;
+}

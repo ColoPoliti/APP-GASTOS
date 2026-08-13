@@ -1,6 +1,7 @@
 import { FaPen, FaTrash, FaLock } from "react-icons/fa";
 import { useTheme } from "../context/ThemeContext";
 import { obtenerEstiloCategoriaComun, obtenerEstiloCategoria } from "../utils/gastosUtils";
+import { obtenerColorTextoIdeal } from '../utils/colorUtils';
 
 export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar }) {
   // ¡Acá está la magia que faltaba! Declaramos el theme para que la línea 29 no explote
@@ -27,7 +28,7 @@ export default function HistorialGastos({ gastos, sesionId, onEditar, onEliminar
             <div>
               <span 
                 className="text-[14px] px-2.5 py-0.5 rounded-md uppercase font-bold border inline-block" 
-                style={obtenerEstiloCategoriaComun(gasto.categorias, theme)}
+                style={obtenerEstiloCategoriaComun (gasto.categorias, theme)}
               >
                 {gasto.categorias?.nombre || 'Sin categoría'}
               </span>

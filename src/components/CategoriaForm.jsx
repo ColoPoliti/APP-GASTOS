@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { FaPlus } from "react-icons/fa";
 
 export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, onCancelar, onEliminar }) {
     const [nombre, setNombre] = useState('');
@@ -48,7 +49,7 @@ export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, o
                     onClick={() => setIsOpen(true)}
                     className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20"
                 >
-                    <span>➕</span> Nueva Categoría
+                    <span><FaPlus /></span> Nueva Categoría
                 </button>
             )}
 
