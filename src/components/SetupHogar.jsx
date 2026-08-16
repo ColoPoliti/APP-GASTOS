@@ -1,44 +1,52 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { useUser } from '../context/UserContext';
 
 export default function SetupHogar({ userId, onHogarSet }) {
+  const { actualizarHogar } = useUser();
   const [tempHogar, setTempHogar] = useState('');
   const [loading, setLoading] = useState(false);
   const [misHogares, setMisHogares] = useState([]);
   const [existe, setExiste] = useState(null);
 
-  // 1. Verificar si el hogar existe al escribir
+  // 1. Verificar si el hogar existe al escribir manualmente (con debounce)
   useEffect(() => {
     if (tempHogar.length < 3) {
       setExiste(null);
       return;
     }
-    const checkHogar = async () => {
+
+    const esHogarExistente = misHogares.some(h => h.codigo === tempHogar.toUpperCase());
+    if (esHogarExistente) {
+      setExiste(true);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
       const { data } = await supabase
         .from('hogares')
         .select('id')
         .eq('codigo', tempHogar.toUpperCase())
         .maybeSingle();
       setExiste(!!data);
-    };
-    checkHogar();
-  }, [tempHogar]);
+    }, 300);
 
-  // 2. Unificar la carga de hogares (propios + invitados)
+    return () => clearTimeout(timer);
+  }, [tempHogar, misHogares]);
+
   // 2. Unificar la carga de hogares (propios + invitados) sin duplicados
-// 2. Unificar la carga de hogares (propios + invitados) sin duplicados
   useEffect(() => {
     const fetchTodosLosHogares = async () => {
+      if (!userId) return;
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Hogares creados
       const { data: creados } = await supabase
         .from('hogares')
         .select('id, codigo')
         .eq('creador_id', userId);
 
-      // Hogares invitados
       const { data: invitaciones } = await supabase
         .from('invitaciones')
         .select('hogares(id, codigo)')
@@ -49,7 +57,6 @@ export default function SetupHogar({ userId, onHogarSet }) {
         ...(invitaciones?.map(i => i.hogares).filter(h => h !== null) || [])
       ];
 
-      // Filtramos duplicados basándonos en el 'id' del hogar
       const listaUnica = Array.from(
         new Map(listaRaw.map(hogar => [hogar.id, hogar])).values()
       );
@@ -60,15 +67,17 @@ export default function SetupHogar({ userId, onHogarSet }) {
   }, [userId]);
 
   // 3. Crear Hogar
-const handleCrearHogar = async (nombreHogar) => {
+  const handleCrearHogar = async (nombreHogar) => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const codigoHogar = nombreHogar.toUpperCase();
+
       const { data: nuevoHogar, error } = await supabase
         .from('hogares')
-        .insert([{ codigo: nombreHogar.toUpperCase(), creador_id: user.id }])
+        .insert([{ codigo: codigoHogar, creador_id: user.id }])
         .select()
         .single();
 
@@ -79,13 +88,14 @@ const handleCrearHogar = async (nombreHogar) => {
         .update({ hogar_id: nuevoHogar.id })
         .eq('id', user.id);
       
-      // ACTUALIZACIÓN SIN REFRESH:
+      actualizarHogar(nuevoHogar.id, codigoHogar);
+
       setMisHogares(prev => [...prev, nuevoHogar]); 
-      setTempHogar(''); // Limpiamos el input
-      onHogarSet(nombreHogar.toUpperCase()); // Avisamos al padre
+      setTempHogar(''); 
+      if (onHogarSet) onHogarSet(codigoHogar);
     } catch (err) {
       console.error(err);
-      alert("Error al crear hogar");
+      alert("Error al crear el Bolsillo");
     } finally {
       setLoading(false);
     }
@@ -94,29 +104,34 @@ const handleCrearHogar = async (nombreHogar) => {
   // 4. Unirse a Hogar existente
   const handleUnirseHogar = async () => {
     setLoading(true);
-    const { data: hogar } = await supabase
-      .from('hogares')
-      .select('id')
-      .eq('codigo', tempHogar.toUpperCase())
-      .single();
+    try {
+      const codigoHogar = tempHogar.toUpperCase();
+      const { data: hogar } = await supabase
+        .from('hogares')
+        .select('id, codigo')
+        .eq('codigo', codigoHogar)
+        .single();
 
-    if (hogar) {
-      await supabase
-        .from('perfiles')
-        .update({ hogar_id: hogar.id })
-        .eq('id', userId);
-      onHogarSet(tempHogar.toUpperCase());
+      if (hogar) {
+        await supabase
+          .from('perfiles')
+          .update({ hogar_id: hogar.id })
+          .eq('id', userId);
+
+        actualizarHogar(hogar.id, hogar.codigo);
+
+        if (onHogarSet) onHogarSet(codigoHogar);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al unirse al Bolsillo");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // 5. Eliminar Hogar
-const eliminarHogar = async () => {
-    // Buscamos el hogar en la lista de hogares creados por el usuario
-    // (Asegurate de que 'misHogares' contenga los datos necesarios, 
-    // quizás necesites ajustar el fetch para traer el creador_id si no lo tienes)
-    
-    // Primero, traemos la info real del hogar desde Supabase para verificar el creador
+// 5. Eliminar Hogar
+  const eliminarHogar = async () => {
     setLoading(true);
     const { data: hogarInfo, error: fetchError } = await supabase
       .from('hogares')
@@ -125,19 +140,17 @@ const eliminarHogar = async () => {
       .single();
 
     if (fetchError || !hogarInfo) {
-      alert("No se pudo verificar la propiedad del hogar.");
+      alert("No se pudo verificar la propiedad del Bolsillo.");
       setLoading(false);
       return;
     }
 
-    // Comparamos el creador_id con tu userId actual
     if (hogarInfo.creador_id !== userId) {
-      alert("⚠️ Solo el creador de este hogar puede eliminarlo.");
+      alert("⚠️ Solo el creador de este Bolsillo puede eliminarlo.");
       setLoading(false);
       return;
     }
 
-    // Si pasó la validación, procedemos con el borrado
     if (!window.confirm("¿Seguro? Esto borrará todo permanentemente.")) {
       setLoading(false);
       return;
@@ -148,29 +161,30 @@ const eliminarHogar = async () => {
       await supabase.from('hogares').delete().eq('id', hogarInfo.id);
       await supabase.from('perfiles').update({ hogar_id: null }).eq('id', userId);
       
+      // Actualizamos el contexto global a null para que la app se resetee sola
+      actualizarHogar(null, null);
+      
+      // Actualizamos los estados locales sin recargar la página en blanco
       setMisHogares(prev => prev.filter(h => h.id !== hogarInfo.id));
       setTempHogar(''); 
       setExiste(false);
       
-      alert("Hogar eliminado correctamente.");
-      window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Error al intentar eliminar el hogar.");
+      alert("Error al intentar eliminar el Bolsillo.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-      <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full">
-        <h2 className="text-white text-xl font-bold mb-4">¡Bienvenido!</h2>
-        <p className="text-slate-400 mb-4 text-sm">Seleccioná o creá tu hogar:</p>
+      <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full shadow-2xl">
+        <h2 className="text-white text-xl font-bold mb-2">¡Bienvenido!</h2>
+        <p className="text-slate-400 mb-6 text-sm">Seleccioná o creá tu Bolsillo para continuar:</p>
         
         <input 
-          className="w-full p-2 mb-4 bg-slate-950 text-white border border-slate-700 rounded-lg uppercase" 
-          placeholder="Código de hogar" 
+          className="w-full p-3 mb-4 bg-slate-950 text-white font-semibold border border-slate-700 rounded-lg uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition-colors" 
+          placeholder="Código de Bolsillo" 
           value={tempHogar} 
           onChange={(e) => setTempHogar(e.target.value.toUpperCase())} 
         />
@@ -180,8 +194,11 @@ const eliminarHogar = async () => {
             {misHogares.map((hogar) => (
               <button
                 key={hogar.id}
-                onClick={() => setTempHogar(hogar.codigo)}
-                className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700"
+                onClick={() => {
+                  setTempHogar(hogar.codigo);
+                  setExiste(true);
+                }}
+                className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-medium hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700"
               >
                 {hogar.codigo}
               </button>
@@ -190,28 +207,38 @@ const eliminarHogar = async () => {
         )}
 
         {tempHogar.length >= 3 && (
-          <div className="mb-4 text-xs">
+          <div className="mb-5 text-sm">
             {existe ? (
-              <p className="text-emerald-500">✅ Hogar encontrado. ¡Podés unirte!</p>
+              <div className="p-3 bg-emerald-950/40 border border-emerald-600/50 rounded-lg text-emerald-400 font-medium flex items-center justify-center gap-2">
+                <i className="fa fa-check-circle text-base"></i> ¡El Bolsillo existe! Podés unirte.
+              </div>
             ) : (
-              <p className="text-amber-500">⚠️ El código no existe. Podés crearlo.</p>
+              <div className="p-3 bg-amber-950/40 border border-amber-600/50 rounded-lg text-amber-400 font-medium flex items-center justify-center gap-2">
+                <i className="fa fa-exclamation-triangle text-base"></i> El Bolsillo no existe. Podés crearlo.
+              </div>
             )}
           </div>
         )}
 
+        {/* BOTÓN CON COLOR DINÁMICO: Indigo para unirse, Verde para crear */}
         <button 
           onClick={existe ? handleUnirseHogar : () => handleCrearHogar(tempHogar)} 
           disabled={loading || tempHogar.length < 3}
-          className="bg-indigo-600 text-white w-full p-2 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
+          className={`w-full p-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 shadow-lg ${
+            existe 
+              ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20' 
+              : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+          }`}
         >
-          {loading ? 'Procesando...' : (existe ? 'Unirse al Hogar' : 'Crear nuevo Hogar')}
+          {loading ? 'Procesando...' : (existe ? 'Unirse al Bolsillo' : 'Crear nuevo Bolsillo')}
         </button>
+
         {existe && misHogares.find(h => h.codigo === tempHogar.toUpperCase()) && (
           <button 
             onClick={eliminarHogar}
-            className="w-full mt-4 p-2 text-red-500 hover:text-red-400 text-xs underline"
+            className="w-full mt-4 p-2 text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors underline"
           >
-            Eliminar este hogar
+            <i className="fa fa-trash"></i> Eliminar este Bolsillo
           </button>
         )}
       </div>

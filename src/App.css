@@ -1,16 +1,4 @@
 
-.sidecolor{.fa {
-  color:rgb(8, 8, 8) !important;
-}}
-.sidecolor{span {
-  color:rgb(8, 8, 8) !important;
-}}
-
-
-.dark{.sidecolor{.fa {
-  color:rgb(255, 255, 255) !important;
-}}}
-
 /* Elimina el outline de selección al hacer clic en cualquier elemento del gráfico o leyenda */
 button:focus, 
 div:focus, 
@@ -26,4 +14,10 @@ canvas:focus {
 
 .recharts-wrapper *:focus {
   outline: none !important;
+}
+
+button:focus, button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
 }

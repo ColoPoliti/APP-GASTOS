@@ -35,12 +35,12 @@ export default function InvitarColaborador({ hogarId }) {
 
   return (
     <div className="flex items-center  gap-4">
-      <span className="text-xl font-bold text-white">Invitar colaborador</span>
+      <span className="text-xl font-bold dark:text-white text-pink-600">Invitar colaborador</span>
 
       {/* Botón circular con texto y ícono */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="bg-indigo-600/20 border border-indigo-500/50 text-indigo-400 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
+        className="dark:bg-indigo-600/20 bg-pink-600/20 border border-pink-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-pink-600  rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
         title="Invitar colaborador"
       >
         <FaUserPlus size={16} />

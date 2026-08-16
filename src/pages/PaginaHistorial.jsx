@@ -46,9 +46,9 @@ export default function PaginaHistorial() {
   const gastosValidos = gastos.filter(gasto => gasto.categorias !== null);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
-      <h1 className="text-2xl font-bold dark:text-white text-slate-950 mb-6">Historial de Gastos</h1>
-      <TablaGastos gastos={gastosValidos} />
-    </div>
+ <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 my-6 overflow-x-hidden">
+    <h1 className="text-2xl font-bold dark:text-white text-slate-950 mb-6">Historial de Gastos</h1>
+    <TablaGastos gastos={gastosValidos} />
+</div>
   );
 }

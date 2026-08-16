@@ -4,10 +4,13 @@ import { supabase } from '../supabaseClient';
 const UserContext = createContext();
 
 export function UserProvider({ children }) {
+  const [user, setUser] = useState(null);
   const [sesion, setSesion] = useState(null);
   const [nombreUsuario, setNombreUsuario] = useState('');
-  const [nombreHogar, setNombreHogar] = useState('');
-  const [hogarId, setHogarId] = useState(null);
+  
+  // Recuperamos el hogar directamente del localStorage al iniciar
+  const [hogarId, setHogarId] = useState(() => localStorage.getItem('hogar_id') || null);
+  const [nombreHogar, setNombreHogar] = useState(() => localStorage.getItem('nombreHogar') || '');
   const [loading, setLoading] = useState(true);
 
   const actualizarHogar = (id, nombre) => {
@@ -15,106 +18,98 @@ export function UserProvider({ children }) {
     setNombreHogar(nombre || '');
     if (id) {
       localStorage.setItem('hogar_id', id);
-      localStorage.setItem('hogar_nombre', nombre || '');
+      localStorage.setItem('nombreHogar', nombre || '');
     } else {
       localStorage.removeItem('hogar_id');
-      localStorage.removeItem('hogar_nombre');
+      localStorage.removeItem('nombreHogar');
     }
   };
 
   const fetchPerfil = async (userId) => {
-    console.log("DEBUG: Buscando perfil para:", userId);
-    
     try {
-      // 1. Buscamos el perfil del usuario
-      const { data: perfil, error: errorPerfil } = await supabase
+      const { data: perfil } = await supabase
         .from('perfiles')
         .select('nombre, hogar_id')
         .eq('id', userId)
         .single();
 
-      if (errorPerfil) {
-        console.error("DEBUG: Error al traer perfil:", errorPerfil);
-        throw errorPerfil;
-      }
-
-      console.log("DEBUG: Perfil encontrado:", perfil);
-      setNombreUsuario(perfil.nombre);
-
-      // 2. Si tiene hogar_id, buscamos el hogar
-      if (perfil.hogar_id) {
-        console.log("DEBUG: Buscando hogar con ID:", perfil.hogar_id);
+      if (perfil) {
+        setNombreUsuario(perfil.nombre || '');
         
-        const { data: hogar, error: errorHogar } = await supabase
-          .from('hogares')
-          .select('id, codigo')
-          .eq('id', perfil.hogar_id)
-          .single();
+        // Si el usuario ya tiene un hogar en la base de datos y nosotros no tenemos uno guardado (o queremos sincronizarlo)
+        if (perfil.hogar_id && !hogarId) {
+          const { data: hogar } = await supabase
+            .from('hogares')
+            .select('id, codigo')
+            .eq('id', perfil.hogar_id)
+            .single();
 
-        if (errorHogar) {
-          console.error("DEBUG: Error al traer datos del hogar:", errorHogar);
-        } else if (hogar) {
-          console.log("DEBUG: Hogar encontrado:", hogar);
-          actualizarHogar(hogar.id, hogar.codigo);
-        } else {
-          console.warn("DEBUG: El perfil tiene un hogar_id, pero no existe en la tabla hogares.");
+          if (hogar) {
+            actualizarHogar(hogar.id, hogar.codigo);
+          }
         }
-      } else {
-        console.log("DEBUG: El usuario no tiene un hogar asignado.");
-        actualizarHogar(null, null);
       }
     } catch (err) {
-      console.error("DEBUG: Error crítico en fetchPerfil:", err);
-    }
-  };
-
-  const refrescarPerfil = async () => {
-    if (sesion?.user?.id) {
-      await fetchPerfil(sesion.user.id);
+      console.error("Error al traer perfil:", err);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      const currentSession = data.session;
+      const currentUser = currentSession?.user ?? null;
+      
+      setSesion(currentSession);
+      setUser(currentUser);
+      
+      if (currentUser) {
+        await fetchPerfil(currentUser.id);
+      }
+      setLoading(false);
+    };
 
-    // Usamos únicamente onAuthStateChange, ya que Supabase emite un evento 
-    // inicial al registrar el listener (ahorrándonos llamar a getSession y duplicar ejecuciones).
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
+    getSession();
 
-      console.log(`DEBUG: Auth event: ${event}`);
-      setSesion(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentSession = session;
+      const currentUser = currentSession?.user ?? null;
+      
+      setSesion(currentSession);
+      setUser(currentUser);
 
-      if (session?.user) {
-        await fetchPerfil(session.user.id);
+      if (currentUser) {
+        await fetchPerfil(currentUser.id);
       } else {
         setNombreUsuario('');
-        actualizarHogar(null, '');
+        // Opcional: si querés que al cerrar sesión se borre el hogar recordado, descomentá la siguiente línea:
+        // actualizarHogar(null, null);
       }
-      
       setLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
     <UserContext.Provider value={{ 
+      user, 
       sesion, 
       nombreUsuario, 
       hogarId, 
-      setHogarId, 
-      actualizarHogar, 
       nombreHogar, 
-      loading,
-      refrescarPerfil
+      actualizarHogar, 
+      loading 
     }}>
-      {children}
+      {!loading && children}
     </UserContext.Provider>
   );
-}
+};
 
-export const useUser = () => useContext(UserContext);
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error('useUser debe ser usado dentro de un UserProvider');
+  }
+  return context;
+};

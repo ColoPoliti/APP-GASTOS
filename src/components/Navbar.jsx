@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle';
 import UserMenu from './UserMenu';
@@ -8,24 +9,56 @@ import { FaPen, FaTrash, FaEllipsisV  } from "react-icons/fa";
 import { GiTakeMyMoney } from "react-icons/gi";
 
 const Navbar = () => {
+    const { nombreHogar, nombreUsuario, hogarId, setHogarId, sesion, actualizarHogar } = useUser();
+    
+    // Estados para la instalación de la PWA
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showInstallButton, setShowInstallButton] = useState(false);
 
-    const { nombreHogar, nombreUsuario, hogarId, setHogarId, sesion, actualizarHogar} = useUser();
+    useEffect(() => {
+        const handler = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallButton(true);
+        };
 
+        window.addEventListener('beforeinstallprompt', handler);
+
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstall = () => {
+        if (!deferredPrompt) return;
+        
+        deferredPrompt.prompt();
+        
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                setShowInstallButton(false);
+            }
+            setDeferredPrompt(null);
+        });
+    };
+
+    // Función unificada y blindada para cambiar/desvincular el hogar
     const handleCambiarHogar = async () => {
         if (!sesion?.user?.id) return;
 
-        await supabase
-            .from('perfiles')
-            .update({ hogar_id: null })
-            .eq('id', sesion.user.id);
+        try {
+            await supabase
+                .from('perfiles')
+                .update({ hogar_id: null })
+                .eq('id', sesion.user.id);
 
-        setHogarId(null);
+            actualizarHogar(null, '');
+        } catch (err) {
+            console.error("Error al desvincular el Bolsillo:", err);
+        }
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        setHogarId(null);
-        localStorage.removeItem('hogar_id');
+        actualizarHogar(null, '');
     };
 
     const opciones = [
@@ -34,52 +67,55 @@ const Navbar = () => {
         { label: 'Cerrar Sesión', value: 'logout' }
     ];
 
-const manejarSeleccion = async (item) => {
-  if (item.value === 'logout') {
-    await handleLogout();
-  } else if (item.value === 'cambiar_hogar') {
-    if (!sesion?.user?.id) return;
-    
-    await supabase
-      .from('perfiles')
-      .update({ hogar_id: null })
-      .eq('id', sesion.user.id);
-
-    // USÁ ESTA FUNCIÓN AQUÍ TAMBIÉN:
-    actualizarHogar(null, '');
-  }
-};
+    const manejarSeleccion = async (item) => {
+        if (item.value === 'logout') {
+            await handleLogout();
+        } else if (item.value === 'cambiar_hogar') {
+            await handleCambiarHogar();
+        }
+    };
 
     return (
-           
         <nav className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 z-50">
-    {/* Logo */}
-    <div className="flex items-center gap-2 text-xl font-bold whitespace-nowrap">
-        <GiTakeMyMoney /> <span>Control de Gastos</span>
-    </div>
+            {/* Logo */}
+            <div className="flex items-center gap-2 text-2xl text-white font-bold whitespace-nowrap">
+                <GiTakeMyMoney className="md:text-6xl"/> <span>Gatillar</span>
+            </div>
 
-<div className="flex items-center gap-4 text-xs md:text-sm">
-    <p className="bg-slate-900 text-white px-2 py-1 rounded hidden sm:block">
-        {/* Aquí mostramos que estamos dentro de un hogar, sin intentar fetchear el nombre */}
-        Hogar: {nombreHogar ? nombreHogar : 'Ninguno'}
-        {hogarId && (
-            <button 
-                onClick={handleCambiarHogar} 
-                className="ml-2 px-2 py-1 text-xs font-semibold text-rose-300 bg-rose-900/30 rounded hover:bg-rose-900/50 hover:text-white transition-colors border border-rose-800"
-            >
-                Cambiar
-            </button>
-        )}
-    </p>
-    <p className="font-bold hidden sm:block">{nombreUsuario}</p>
-    
-    <Dropdown
-        label={<FaEllipsisV />}
-        items={opciones}
-        onSelect={manejarSeleccion}
-    />
-</div>
-</nav>
+            <div className="flex items-center gap-4 text-xs md:text-sm">
+                {/* Botón de instalación de la PWA (solo aparece si el navegador lo permite) */}
+                {showInstallButton && (
+                    <button 
+                        onClick={handleInstall}
+                        className="bg-slate-900 text-white px-3 py-1.5 rounded-full font-bold shadow-md transition-colors border border-slate-700"
+                    >
+                        📲 Instalar App
+                    </button>
+                )}
+
+                <p className="bg-slate-900 text-white px-3 py-1.5 rounded-full hidden sm:flex items-center gap-1 shadow-sm">
+                    <span>Bolsillo:</span> {nombreHogar ? <span className="font-bold text-indigo-300">{nombreHogar}</span> : 'Ninguno'}
+                    {hogarId && (
+                        <button 
+                            onClick={handleCambiarHogar} 
+                            className="ml-2 px-2 py-0.5 text-xs font-semibold text-rose-300 bg-rose-900/30 rounded-full hover:bg-rose-900/50 hover:text-white transition-colors border border-rose-800"
+                        >
+                            Cambiar
+                        </button>
+                    )}
+                </p>
+                <p className="font-bold text-white hidden sm:block">{nombreUsuario}</p>
+                
+                {/* Dropdown con el botón de elipsis sin ningún hover */}
+                <div className="[&_button]:hover:bg-transparent [&_button]:bg-transparent [&_button]:shadow-none [&_button]:border-0 text-white text-lg">
+                    <Dropdown
+                        label={<FaEllipsisV className="cursor-pointer text-white" />}
+                        items={opciones}
+                        onSelect={manejarSeleccion}
+                    />
+                </div>
+            </div>
+        </nav>
     );
 };
 
