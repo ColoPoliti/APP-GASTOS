@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import ThemeToggle from '../ThemeToggle';
-import UserMenu from './UserMenu';
+import React, { useState, useEffect } from 'react';
 import { useUser } from "../context/UserContext.jsx";
 import { supabase } from '../supabaseClient';
-import Dropdown from '../components/Dropdown.jsx';
-import { FaPen, FaTrash, FaEllipsisV  } from "react-icons/fa";
+import Dropdown from './Dropdown.jsx';
+import NotificacionesDropdown from './NotificacionesDropdown';
+import { FaEllipsisV } from "react-icons/fa";
 import { GiTakeMyMoney } from "react-icons/gi";
 
 const Navbar = () => {
-    const { nombreHogar, nombreUsuario, hogarId, setHogarId, sesion, actualizarHogar } = useUser();
+    const { nombreHogar, nombreUsuario, hogarId, sesion, actualizarHogar } = useUser();
     
-    // Estados para la instalación de la PWA
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallButton, setShowInstallButton] = useState(false);
 
@@ -21,35 +18,23 @@ const Navbar = () => {
             setDeferredPrompt(e);
             setShowInstallButton(true);
         };
-
         window.addEventListener('beforeinstallprompt', handler);
-
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
     const handleInstall = () => {
         if (!deferredPrompt) return;
-        
         deferredPrompt.prompt();
-        
         deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                setShowInstallButton(false);
-            }
+            if (choiceResult.outcome === 'accepted') setShowInstallButton(false);
             setDeferredPrompt(null);
         });
     };
 
-    // Función unificada y blindada para cambiar/desvincular el hogar
     const handleCambiarHogar = async () => {
         if (!sesion?.user?.id) return;
-
         try {
-            await supabase
-                .from('perfiles')
-                .update({ hogar_id: null })
-                .eq('id', sesion.user.id);
-
+            await supabase.from('perfiles').update({ hogar_id: null }).eq('id', sesion.user.id);
             actualizarHogar(null, '');
         } catch (err) {
             console.error("Error al desvincular el Bolsillo:", err);
@@ -68,11 +53,8 @@ const Navbar = () => {
     ];
 
     const manejarSeleccion = async (item) => {
-        if (item.value === 'logout') {
-            await handleLogout();
-        } else if (item.value === 'cambiar_hogar') {
-            await handleCambiarHogar();
-        }
+        if (item.value === 'logout') await handleLogout();
+        else if (item.value === 'cambiar_hogar') await handleCambiarHogar();
     };
 
     return (
@@ -83,7 +65,6 @@ const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-4 text-xs md:text-sm">
-                {/* Botón de instalación de la PWA (solo aparece si el navegador lo permite) */}
                 {showInstallButton && (
                     <button 
                         onClick={handleInstall}
@@ -105,8 +86,10 @@ const Navbar = () => {
                     )}
                 </p>
                 <p className="font-bold text-white hidden sm:block">{nombreUsuario}</p>
-                
-                {/* Dropdown con el botón de elipsis sin ningún hover */}
+    
+                {/* COMPONENTE DE NOTIFICACIONES */}
+                <NotificacionesDropdown />
+
                 <div className="[&_button]:hover:bg-transparent [&_button]:bg-transparent [&_button]:shadow-none [&_button]:border-0 text-white text-lg">
                     <Dropdown
                         label={<FaEllipsisV className="cursor-pointer text-white" />}

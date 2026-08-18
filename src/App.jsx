@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import PushManager from './components/PushManager';
 import Dashboard from './pages/DashboardRefact.jsx';
 import Login from './pages/Login';
 import Graficos from './pages/Graficos';
@@ -14,15 +13,12 @@ import PaginaGestionGastos from './pages/PaginaGestionGastos';
 import { BounceLoader } from 'react-spinners';
 import { supabase } from './supabaseClient';
 
-// Componente para forzar la redirección al dashboard al arrancar o loguearse
 function ForceDashboardRedirect() {
   const navigate = useNavigate();
   const location = useLocation();
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Si acaba de arrancar la app y está en la raíz, login, o cualquier otra página vieja, 
-    // lo mandamos al dashboard una sola vez al inicio.
     if (!hasRedirected.current) {
       if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '' || location.pathname !== '/dashboard') {
         navigate('/dashboard', { replace: true });
@@ -30,7 +26,6 @@ function ForceDashboardRedirect() {
       hasRedirected.current = true;
     }
 
-    // Escuchamos por si hace login en caliente
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         navigate('/dashboard', { replace: true });
@@ -38,7 +33,7 @@ function ForceDashboardRedirect() {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]); // Quitamos location.pathname de las dependencias para que solo actúe al montar
+  }, [navigate]);
 
   return null;
 }
@@ -46,6 +41,7 @@ function ForceDashboardRedirect() {
 function AppContent() {
   const { sesion, loading, hogarId } = useUser();
 
+  // Freno total mientras valida sesión y perfil de usuario
   if (loading) {
     return (
       <div className="flex h-screen bg-slate-950 items-center justify-center">
@@ -74,6 +70,10 @@ function AppContent() {
             </Route>
             <Route path="*" element={<Dashboard />} />
           </Routes>
+
+          <div className="fixed bottom-4 left-4 z-50">
+            <PushManager />
+          </div>
         </main>
       </div>
     </>

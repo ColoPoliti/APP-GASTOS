@@ -13,45 +13,73 @@ export default function InvitarColaborador({ hogarId }) {
     
     setLoading(true);
 
-    const { error } = await supabase
-      .from('invitaciones')
-      .insert([
-        { 
-          hogar_id: hogarId, 
-          email_invitado: email.toLowerCase(),
-          estado: 'pendiente' 
-        }
-      ]);
+    try {
+      // 1. Insertamos la invitación y traemos su ID con .select().single()
+      const { data: invData, error: invError } = await supabase
+        .from('invitaciones')
+        .insert([
+          { 
+            hogar_id: hogarId, 
+            email_invitado: email.toLowerCase(),
+            estado: 'pendiente' 
+          }
+        ])
+        .select()
+        .single();
 
-    if (error) {
-      alert("Error al enviar invitación: " + error.message);
-    } else {
+      if (invError) throw invError;
+
+      // 2. Buscamos si el usuario ya tiene perfil registrado en la app
+      const { data: perfilData } = await supabase
+        .from('perfiles')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      // 3. Si el usuario existe, le generamos su notificación con el enlace vinculado
+      if (perfilData) {
+        const { data: hogarData } = await supabase
+          .from('hogares')
+          .select('codigo')
+          .eq('id', hogarId)
+          .single();
+
+        await supabase
+          .from('notificaciones')
+          .insert({
+            usuario_id: perfilData.id,
+            mensaje: `Te invitaron al bolsillo: ${hogarData?.codigo || 'Bolsillo'}`,
+            invitacion_id: invData.id // ¡Acá va el link clave!
+          });
+      }
+
       alert("¡Invitación enviada a " + email + "!");
       setEmail('');
       setIsOpen(false);
+    } catch (err) {
+      console.error("Error al enviar invitación:", err);
+      alert("Error al enviar invitación: " + err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="flex items-center  gap-4">
+    <div className="flex items-center gap-4">
       <span className="text-xl font-bold dark:text-white text-pink-600">Invitar colaborador</span>
 
-      {/* Botón circular con texto y ícono */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="dark:bg-indigo-600/20 bg-pink-600/20 border border-pink-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-pink-600  rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
+        className="dark:bg-indigo-600/20 bg-pink-600/20 border border-pink-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-pink-600 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
         title="Invitar colaborador"
       >
         <FaUserPlus size={16} />
       </button>
 
-      {/* Modal flotante */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative my-auto">
             
-            {/* Botón para cerrar */}
             <button 
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"

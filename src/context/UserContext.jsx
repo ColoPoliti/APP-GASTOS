@@ -8,9 +8,9 @@ export function UserProvider({ children }) {
   const [sesion, setSesion] = useState(null);
   const [nombreUsuario, setNombreUsuario] = useState('');
   
-  // Recuperamos el hogar directamente del localStorage al iniciar
-  const [hogarId, setHogarId] = useState(() => localStorage.getItem('hogar_id') || null);
-  const [nombreHogar, setNombreHogar] = useState(() => localStorage.getItem('nombreHogar') || '');
+  // Inicializamos en null para que espere a leer de la base de datos y no tire falsos renders
+  const [hogarId, setHogarId] = useState(null);
+  const [nombreHogar, setNombreHogar] = useState('');
   const [loading, setLoading] = useState(true);
 
   const actualizarHogar = (id, nombre) => {
@@ -36,8 +36,7 @@ export function UserProvider({ children }) {
       if (perfil) {
         setNombreUsuario(perfil.nombre || '');
         
-        // Si el usuario ya tiene un hogar en la base de datos y nosotros no tenemos uno guardado (o queremos sincronizarlo)
-        if (perfil.hogar_id && !hogarId) {
+        if (perfil.hogar_id) {
           const { data: hogar } = await supabase
             .from('hogares')
             .select('id, codigo')
@@ -46,7 +45,11 @@ export function UserProvider({ children }) {
 
           if (hogar) {
             actualizarHogar(hogar.id, hogar.codigo);
+          } else {
+            actualizarHogar(null, null);
           }
+        } else {
+          actualizarHogar(null, null);
         }
       }
     } catch (err) {
@@ -54,41 +57,62 @@ export function UserProvider({ children }) {
     }
   };
 
+  const refrescarPerfil = async () => {
+    if (user?.id) {
+      await fetchPerfil(user.id);
+    }
+  };
+
   useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      const currentSession = data.session;
-      const currentUser = currentSession?.user ?? null;
-      
-      setSesion(currentSession);
-      setUser(currentUser);
-      
-      if (currentUser) {
-        await fetchPerfil(currentUser.id);
+    let isMounted = true;
+
+    const inicializarAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const currentSession = data.session;
+        const currentUser = currentSession?.user ?? null;
+        
+        if (isMounted) {
+          setSesion(currentSession);
+          setUser(currentUser);
+          
+          if (currentUser) {
+            await fetchPerfil(currentUser.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error de autenticación:", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     };
 
-    getSession();
+    inicializarAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentSession = session;
       const currentUser = currentSession?.user ?? null;
       
-      setSesion(currentSession);
-      setUser(currentUser);
+      if (isMounted) {
+        setSesion(currentSession);
+        setUser(currentUser);
 
-      if (currentUser) {
-        await fetchPerfil(currentUser.id);
-      } else {
-        setNombreUsuario('');
-        // Opcional: si querés que al cerrar sesión se borre el hogar recordado, descomentá la siguiente línea:
-        // actualizarHogar(null, null);
+        if (currentUser) {
+          await fetchPerfil(currentUser.id);
+        } else {
+          setNombreUsuario('');
+          actualizarHogar(null, null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
@@ -99,9 +123,10 @@ export function UserProvider({ children }) {
       hogarId, 
       nombreHogar, 
       actualizarHogar, 
+      refrescarPerfil, 
       loading 
     }}>
-      {!loading && children}
+      {children}
     </UserContext.Provider>
   );
 };

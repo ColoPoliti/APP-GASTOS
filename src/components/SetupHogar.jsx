@@ -9,7 +9,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
   const [misHogares, setMisHogares] = useState([]);
   const [existe, setExiste] = useState(null);
 
-  // 1. Verificar si el hogar existe al escribir manualmente (con debounce)
+  // 1. Verificar si el hogar existe al escribir manualmente
   useEffect(() => {
     if (tempHogar.length < 3) {
       setExiste(null);
@@ -34,9 +34,9 @@ export default function SetupHogar({ userId, onHogarSet }) {
     return () => clearTimeout(timer);
   }, [tempHogar, misHogares]);
 
-  // 2. Unificar la carga de hogares (propios + invitados) sin duplicados
+  // 2. Cargar hogares propios y hogares de invitaciones ya aceptadas
   useEffect(() => {
-    const fetchTodosLosHogares = async () => {
+    const fetchMisHogares = async () => {
       if (!userId) return;
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -47,14 +47,15 @@ export default function SetupHogar({ userId, onHogarSet }) {
         .select('id, codigo')
         .eq('creador_id', userId);
 
-      const { data: invitaciones } = await supabase
+      const { data: invitacionesAceptadas } = await supabase
         .from('invitaciones')
         .select('hogares(id, codigo)')
-        .eq('email_invitado', user.email);
+        .eq('email_invitado', user.email)
+        .eq('estado', 'aceptada');
 
       const listaRaw = [
         ...(creados || []),
-        ...(invitaciones?.map(i => i.hogares).filter(h => h !== null) || [])
+        ...(invitacionesAceptadas?.map(i => i.hogares).filter(h => h !== null) || [])
       ];
 
       const listaUnica = Array.from(
@@ -63,7 +64,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
       setMisHogares(listaUnica);
     };
-    fetchTodosLosHogares();
+    fetchMisHogares();
   }, [userId]);
 
   // 3. Crear Hogar
@@ -92,7 +93,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
       setMisHogares(prev => [...prev, nuevoHogar]); 
       setTempHogar(''); 
-      if (onHogarSet) onHogarSet(codigoHogar);
+      if (onHogarSet) onHogarSet(nuevoHogar.id, codigoHogar);
     } catch (err) {
       console.error(err);
       alert("Error al crear el Bolsillo");
@@ -120,7 +121,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
         actualizarHogar(hogar.id, hogar.codigo);
 
-        if (onHogarSet) onHogarSet(codigoHogar);
+        if (onHogarSet) onHogarSet(hogar.id, hogar.codigo);
       }
     } catch (err) {
       console.error(err);
@@ -130,7 +131,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
     }
   };
 
-// 5. Eliminar Hogar
+  // 5. Eliminar Hogar de forma directa
   const eliminarHogar = async () => {
     setLoading(true);
     const { data: hogarInfo, error: fetchError } = await supabase
@@ -151,31 +152,34 @@ export default function SetupHogar({ userId, onHogarSet }) {
       return;
     }
 
-    if (!window.confirm("¿Seguro? Esto borrará todo permanentemente.")) {
+    if (!window.confirm("¿Estás seguro? Esto borrará el Bolsillo y todos sus datos permanentemente.")) {
       setLoading(false);
       return;
     }
 
     try {
-      await supabase.from('gastos').delete().eq('hogar_id', hogarInfo.id);
-      await supabase.from('hogares').delete().eq('id', hogarInfo.id);
-      await supabase.from('perfiles').update({ hogar_id: null }).eq('id', userId);
+      const { error: hogarError } = await supabase
+        .from('hogares')
+        .delete()
+        .eq('id', hogarInfo.id);
+
+      if (hogarError) throw hogarError;
       
-      // Actualizamos el contexto global a null para que la app se resetee sola
       actualizarHogar(null, null);
       
-      // Actualizamos los estados locales sin recargar la página en blanco
       setMisHogares(prev => prev.filter(h => h.id !== hogarInfo.id));
       setTempHogar(''); 
       setExiste(false);
       
+      alert("Bolsillo eliminado correctamente.");
     } catch (err) {
-      console.error(err);
+      console.error("Error detallado al eliminar:", err);
       alert("Error al intentar eliminar el Bolsillo.");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
       <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full shadow-2xl">
@@ -195,6 +199,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
               <button
                 key={hogar.id}
                 onClick={() => {
+                  // SOLO rellena el input y valida, permitiendo confirmación previa
                   setTempHogar(hogar.codigo);
                   setExiste(true);
                 }}
@@ -220,7 +225,6 @@ export default function SetupHogar({ userId, onHogarSet }) {
           </div>
         )}
 
-        {/* BOTÓN CON COLOR DINÁMICO: Indigo para unirse, Verde para crear */}
         <button 
           onClick={existe ? handleUnirseHogar : () => handleCrearHogar(tempHogar)} 
           disabled={loading || tempHogar.length < 3}
