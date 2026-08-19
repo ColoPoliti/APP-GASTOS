@@ -1,5 +1,9 @@
 // src/sw-custom.js
 
+// Línea obligatoria para que Workbox / Vite PWA no tire error en el build de Vercel
+import { precacheAndRoute } from 'workbox-precaching';
+precacheAndRoute(self.__WB_MANIFEST || []);
+
 // Escucha cuando llega una notificación push desde el servidor
 self.addEventListener('push', function (event) {
   if (!event.data) return;
