@@ -22,7 +22,7 @@ export default function MobileBottomNav() {
             className={`flex flex-col items-center justify-center w-full h-full text-xs transition-colors
             ${
               rutaActiva 
-                ? (theme === 'dark' ? 'text-cyan-400 font-bold' : 'text-cyan-600 font-bold')
+                ? (theme === 'dark' ? 'text-cyan-400 font-bold' : 'text-cyan-400 font-bold')
                 : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')
             }`}
           >

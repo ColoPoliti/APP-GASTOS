@@ -58,7 +58,7 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 z-50">
+        <nav className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 z-50">
             {/* Logo */}
             <div className="flex items-center gap-2 text-2xl text-white font-bold whitespace-nowrap">
                 <GiTakeMyMoney className="md:text-6xl"/> <span>Gatillar</span>
@@ -75,17 +75,17 @@ const Navbar = () => {
                 )}
 
                 <p className="bg-slate-900 text-white px-3 py-1.5 rounded-full hidden sm:flex items-center gap-1 shadow-sm">
-                    <span>Bolsillo:</span> {nombreHogar ? <span className="font-bold text-indigo-300">{nombreHogar}</span> : 'Ninguno'}
+                    <span>Bolsillo:</span> {nombreHogar ? <span className="font-bold text-cyan-400">{nombreHogar}</span> : 'Ninguno'}
                     {hogarId && (
                         <button 
                             onClick={handleCambiarHogar} 
-                            className="ml-2 px-2 py-0.5 text-xs font-semibold text-rose-300 bg-rose-900/30 rounded-full hover:bg-rose-900/50 hover:text-white transition-colors border border-rose-800"
+                            className="ml-2 px-2 py-0.5 text-xs font-semibold text-pink-300 bg-pink-900/30 rounded-full hover:bg-pink-900/50 hover:text-white transition-colors border border-pink-800"
                         >
                             Cambiar
                         </button>
                     )}
                 </p>
-                <p className="font-bold text-white hidden sm:block">{nombreUsuario}</p>
+                <p className="font-bold text-white hidden  sm:block">{nombreUsuario}</p>
     
                 {/* COMPONENTE DE NOTIFICACIONES */}
                 <NotificacionesDropdown />

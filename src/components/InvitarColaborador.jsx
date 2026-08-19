@@ -67,19 +67,19 @@ export default function InvitarColaborador({ hogarId }) {
 
   return (
     <div className="flex items-center gap-4">
-      <span className="text-xl font-bold dark:text-white text-pink-600">Invitar colaborador</span>
+      <span className="text-xl font-bold dark:text-white text-indigo-600">Invitar colaborador</span>
 
       <button 
         onClick={() => setIsOpen(true)}
-        className="dark:bg-indigo-600/20 bg-pink-600/20 border border-pink-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-pink-600 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
+        className="dark:bg-indigo-600/20 bg-indigo-600/20 border border-indigo-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-indigo-600 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
         title="Invitar colaborador"
       >
         <FaUserPlus size={16} />
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/80 bg-white/20  backdrop-blur-md p-4 overflow-y-auto">
+          <div className="w-full max-w-md dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200  rounded-2xl p-6 shadow relative my-auto">
             
             <button 
               onClick={() => setIsOpen(false)}
@@ -88,14 +88,14 @@ export default function InvitarColaborador({ hogarId }) {
               <FaTimes size={18} />
             </button>
 
-            <h3 className="text-white font-bold text-xl mb-4">Invitar a alguien</h3>
+            <h3 className="dark:text-white text-slate-950 font-bold text-xl mb-4">Invitar a alguien</h3>
             
             <form onSubmit={handleInvitar} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Correo electrónico</label>
                 <input 
                   type="email"
-                  className="w-full p-3 bg-slate-950 text-white border border-slate-700 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="w-full p-3 dark:bg-slate-950 bg-white text-white border border-slate-700 rounded-full focus:outline-none focus:border-indigo-500"
                   placeholder="colaborador@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

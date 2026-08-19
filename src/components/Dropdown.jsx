@@ -30,7 +30,7 @@ export default function Dropdown({ label, items, onSelect }) {
 
       {/* Menú desplegable */}
       {isOpen && (
-        <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-slate-900 border border-slate-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute right-1 z-10 mt-4 w-48 origin-top-right shadow  dark:bg-slate-900 bg-white dark:border dark:border-slate-700  ring-1 ring-black ring-opacity-5 focus:outline-none animate-in fade-in zoom-in-95 duration-200">
           <div className="py-1">
             {items.map((item, index) => (
               <button
@@ -39,7 +39,7 @@ export default function Dropdown({ label, items, onSelect }) {
                   onSelect(item);
                   setIsOpen(false);
                 }}
-                className="block w-full px-4 py-2 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition-colors text-left"
+                className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:font-bold transition-colors text-left"
               >
                 {item.label}
               </button>

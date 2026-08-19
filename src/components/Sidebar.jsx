@@ -41,7 +41,7 @@ export default function Sidebar({ expanded, setExpanded }) {
             } ${
                 theme === 'dark' 
                     ? 'bg-[#060a17] text-white' 
-                    : 'bg-[#060a17] text-white'
+                    : 'bg-[#ffff] text-slate-500'
             }`}
         >
             {/* Botón de Toggle Manual */}
@@ -73,26 +73,26 @@ export default function Sidebar({ expanded, setExpanded }) {
                                     style={{ outline: 'none', boxShadow: 'none' }}
                                     className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all group select-none ${
                                         isActive 
-                                            ? 'font-semibold text-cyan-400 bg-transparent' 
+                                            ? 'font-semibold dark:text-cyan-400 text-purple-800 bg-transparent' 
                                             : 'hover:bg-white/10 text-inherit bg-transparent'
                                     }`}
                                 >
                                     {/* Contenedor del icono 100% circular */}
                                     <div className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all ${
-                                        isActive ? 'bg-cyan-500/20 text-cyan-400' : 'group-hover:bg-white/20'
+                                        isActive ? 'dark:bg-cyan-500/20 dark:text-cyan-400 bg-purple-500/20 text-purple-800' : 'group-hover:bg-white/20'
                                     }`}>
                                         <i className={`fa fa-fw ${link.icon}`} style={{ fontSize: '1.3em' }} />
                                         
                                         {/* Puntito más pequeño indicador */}
                                         {!isActive && (
-                                            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-75"></span>
+                                            <span className="absolute top-1 right-1 w-1.5 h-1.5 dark:bg-cyan-500 bg-purple-600 rounded-full opacity-75"></span>
                                         )}
                                     </div>
 
                                     {/* Texto del menú */}
                                     <span
                                         className={`whitespace-nowrap transition-opacity duration-200 txt-dark ${
-                                            isActive ? 'text-cyan-400 font-bold' : ''
+                                            isActive ? 'dark:text-cyan-400 text-purple-800 font-bold' : ''
                                         } ${
                                             expanded ? 'opacity-100' : 'opacity-0 pointer-events-none hidden'
                                         }`}

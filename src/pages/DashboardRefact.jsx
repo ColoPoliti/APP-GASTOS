@@ -112,25 +112,14 @@ export default function Dashboard() {
     // 1. Si el usuario, el contexto o las invitaciones siguen cargando, mostramos el loader general
     if (loading || verificandoInvitacion) {
         return (
-            <div className="min-h-screen dark:bg-slate-950 bg-slate-900 flex flex-col items-center justify-center text-slate-400 space-y-4">
+            <div className="min-h-screen dark:bg-slate-950 bg-slate-100 flex flex-col items-center justify-center text-slate-400 space-y-4">
                 <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                <p className="text-sm font-semibold tracking-wider uppercase text-slate-300">Sincronizando tu espacio...</p>
+                <p className="text-sm font-semibold tracking-wider uppercase dark:text-slate-300 text-slate-900">Sincronizando tu espacio...</p>
             </div>
         );
     }
 
-    // 2. Si terminó de cargar y comprobamos que no hay hogar ni invitación, recién ahí vamos al setup
-    if (!hogarId && !invitacionPendiente) {
-        return (
-            <SetupHogar 
-                userId={sesion?.user?.id} 
-                onHogarSet={(id, codigo) => {
-                    actualizarHogar(id, codigo);
-                }} 
-            />
-        );
-    }
-
+ 
     return (
         <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors pt-16 duration-300 pb-20 relative">
 
@@ -171,7 +160,7 @@ export default function Dashboard() {
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                 <div>
                                     <h1 className="text-3xl font-black mb-1 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
-                                    <p className="dark:text-slate-400 text-slate-950 text-sm">Estás gestionando el bolsillo: <span className="font-bold text-indigo-400">{nombreHogar}</span></p>
+                                    <p className="dark:text-slate-400 text-slate-950 text-sm">Estás gestionando el bolsillo: <span className="font-bold dark:text-cyan-400 text-purple-600">{nombreHogar}</span></p>
                                 </div>
 
                                 <div className="w-full md:w-auto">
@@ -188,7 +177,7 @@ export default function Dashboard() {
                             <div className="mt-12 text-center">
                                 <Link
                                     to="/gestion-gastos"
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all transform hover:-translate-y-0.5"
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-cyan-400 hover:bg-cyan-700 text-white font-bold py-4 px-8 rounded-2xl shadow shadow-cyan-600/20 transition-all transform hover:-translate-y-0.5"
                                 >
                                     <FaPlusCircle size={20} />
                                     EMPEZAR A CARGAR GASTOS

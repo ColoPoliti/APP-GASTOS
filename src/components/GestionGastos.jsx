@@ -17,6 +17,7 @@ export default function GestionGastos({ hogarId, sesion }) {
     const [categoriaEditando, setCategoriaEditando] = useState(null);
     const [gastoEditando, setGastoEditando] = useState(null);
     const [tabActiva, setTabActiva] = useState('todos');
+    const [categoriaActual, setCategoriaActual] = useState(0);
 
     const traerCategorias = async () => {
         if (!hogarId) return;
@@ -71,11 +72,42 @@ export default function GestionGastos({ hogarId, sesion }) {
 
     const nombresUsuarios = [...new Set(gastos.map(g => g.perfiles?.nombre || g.perfiles?.email || 'Invitado'))];
 
+    const moverCarrusel = (direccion) => {
+        if (categorias.length === 0) return;
+        setCategoriaActual((actual) => {
+            const nuevoIndice = actual + direccion;
+            if (nuevoIndice < 0) return 0;
+            if (nuevoIndice >= categorias.length) return categorias.length - 1;
+            return nuevoIndice;
+        });
+    };
+
+    const irACategoria = (index) => {
+        setCategoriaActual(index);
+        const carrusel = document.getElementById('categorias-carrusel');
+        if (!carrusel) return;
+        const tarjeta = carrusel.children[index];
+        if (tarjeta) {
+            tarjeta.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    };
+
+    const detectarScrollCarrusel = (e) => {
+        if (window.innerWidth >= 640) return;
+        const carrusel = e.currentTarget;
+        const tarjetas = carrusel.children;
+        if (!tarjetas.length) return;
+        const primeraTarjeta = tarjetas[0];
+        const anchoTarjeta = primeraTarjeta.offsetWidth + 12;
+        const nuevoIndice = Math.round(carrusel.scrollLeft / anchoTarjeta);
+        setCategoriaActual(Math.max(0, Math.min(nuevoIndice, categorias.length - 1)));
+    };
+
     return (
-        <div className="space-y-10">
+        <div className="w-full max-w-[90vw] overflow-x-hidden space-y-8 sm:space-y-10  box-border">
             {/* Formularios: Categoría, Gasto y Transferencia */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                <div className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start w-full max-w-full">
+                <div className="w-full min-w-0">
                     <CategoriaForm
                         hogarId={hogarId}
                         categoriaEditando={categoriaEditando}
@@ -93,7 +125,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                     />
                 </div>
 
-                <div className="w-full">
+                <div className="w-full min-w-0">
                     <GastoForm
                         categorias={categorias}
                         gastoEditando={gastoEditando}
@@ -104,7 +136,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                     />
                 </div>
 
-                <div className="w-full">
+                <div className="w-full min-w-0">
                     <TransferenciaForm
                         hogarId={hogarId}
                         sesionId={sesion?.user?.id}
@@ -114,30 +146,88 @@ export default function GestionGastos({ hogarId, sesion }) {
                 </div>
             </div>
 
-            {/* Listado de Categorías */}
-            <div className="space-y-3">
+            {/* Listado de Categorías (Carrusel con ancho acotado) */}
+            <div className="space-y-3 w-full max-w-full">
                 <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <FaFolder className="text-indigo-400" size={14} /> Categorías
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3">
-                    {categorias.map(cat => {
-                        const total = gastos.filter(g => g.categoria_id === cat.id).reduce((acc, g) => acc + (parseFloat(g.monto) || 0), 0);
-                        return (
-                            <div key={cat.id} className="p-4 border rounded-xl relative group w-full" style={obtenerEstiloCategoria(cat, theme, true)}>
-                                <span className="block text-[10px] uppercase font-bold opacity-80 truncate">{cat.nombre}</span>
-                                <div className="text-xl font-black mt-1">${total.toLocaleString('es-AR')}</div>
-                                <button onClick={() => setCategoriaEditando(cat)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
-                                    <FaPen size={12} />
-                                </button>
-                            </div>
-                        );
-                    })}
+
+                <div className="relative w-full max-w-full">
+                    {categorias.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={() => moverCarrusel(-1)}
+                            disabled={categoriaActual === 0}
+                            className={`sm:hidden absolute left-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-slate-900/90 border border-slate-600 text-white text-2xl shadow-lg transition-all ${
+                                categoriaActual === 0 ? 'opacity-30' : 'opacity-100 active:scale-90'
+                            }`}
+                        >
+                            ‹
+                        </button>
+                    )}
+
+                    <div
+                        id="categorias-carrusel"
+                        onScroll={detectarScrollCarrusel}
+                        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth px-1 pb-2 w-full max-w-full sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 sm:overflow-visible sm:pb-0"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        {categorias.map((cat) => {
+                            const total = gastos.filter(g => g.categoria_id === cat.id).reduce((acc, g) => acc + (parseFloat(g.monto) || 0), 0);
+                            return (
+                                <div
+                                    key={cat.id}
+                                    className="p-4 border rounded-xl relative group flex-none w-[75%] sm:w-auto sm:flex-auto snap-center box-border"
+                                    style={obtenerEstiloCategoria(cat, theme, true)}
+                                >
+                                    <span className="block text-[10px] uppercase font-bold opacity-80 truncate pr-6">{cat.nombre}</span>
+                                    <div className="text-xl font-black mt-1">${total.toLocaleString('es-AR')}</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCategoriaEditando(cat)}
+                                        className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-slate-400 hover:text-indigo-400"
+                                    >
+                                        <FaPen size={12} />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {categorias.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={() => moverCarrusel(1)}
+                            disabled={categoriaActual === categorias.length - 1}
+                            className={`sm:hidden absolute right-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-slate-900/90 border border-slate-600 text-white text-2xl shadow-lg transition-all ${
+                                categoriaActual === categorias.length - 1 ? 'opacity-30' : 'opacity-100 active:scale-90'
+                            }`}
+                        >
+                            ›
+                        </button>
+                    )}
                 </div>
+
+                {categorias.length > 1 && (
+                    <div className="flex sm:hidden justify-center items-center gap-1.5 mt-2">
+                        {categorias.map((cat, index) => (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => irACategoria(index)}
+                                aria-label={`Ir a categoría ${index + 1}`}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                    categoriaActual === index ? 'w-5 bg-indigo-500' : 'w-1.5 bg-slate-600'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Historial de Gastos y Pestañas */}
-            <div className="space-y-4">
-                <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <div className="space-y-4 w-full max-w-full">
+                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 w-full max-w-full" style={{ scrollbarWidth: 'none' }}>
                     <button
                         onClick={() => setTabActiva('todos')}
                         className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
@@ -155,35 +245,39 @@ export default function GestionGastos({ hogarId, sesion }) {
                     ))}
                 </div>
 
-                <HistorialGastos
-                    gastos={gastosFiltrados}
-                    sesionId={sesion?.user?.id}
-                    onEditar={(gasto) => setGastoEditando(gasto)}
-                    onEliminar={(gasto) => eliminarGasto(gasto)}
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                    <HistorialGastos
+                        gastos={gastosFiltrados}
+                        sesionId={sesion?.user?.id}
+                        onEditar={(gasto) => setGastoEditando(gasto)}
+                        onEliminar={(gasto) => eliminarGasto(gasto)}
+                    />
+                </div>
             </div>
 
             {/* Listado de Transferencias */}
-            <div className="space-y-3">
+            <div className="space-y-3 w-full max-w-full">
                 <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">
                     Transferencias Registradas
                 </h3>
-                {transferencias.map(t => (
-                    <div key={t.id} className="flex justify-between items-center p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm mb-2">
-                        <div>
-                            <span className="text-slate-400 block text-xs">Fecha: {new Date(t.fecha).toLocaleDateString()}</span>
-                            <span className="text-white font-medium">Monto: <strong className="text-emerald-400">${Number(t.monto).toLocaleString('es-AR')}</strong></span>
+                <div className="w-full max-w-full space-y-2">
+                    {transferencias.map(t => (
+                        <div key={t.id} className="flex justify-between items-center p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm w-full max-w-full box-border">
+                            <div className="min-w-0 pr-2">
+                                <span className="text-slate-400 block text-xs">Fecha: {new Date(t.fecha).toLocaleDateString()}</span>
+                                <span className="text-white font-medium truncate block">Monto: <strong className="text-emerald-400">${Number(t.monto).toLocaleString('es-AR')}</strong></span>
+                            </div>
+                            {t.enviado_por === sesion?.user?.id && (
+                                <button
+                                    onClick={() => eliminarTransferencia(t.id)}
+                                    className="text-red-400 hover:text-red-300 transition-colors text-xs font-bold flex-shrink-0 ml-2"
+                                >
+                                    Eliminar
+                                </button>
+                            )}
                         </div>
-                        {t.enviado_por === sesion?.user?.id && (
-                            <button
-                                onClick={() => eliminarTransferencia(t.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors text-xs font-bold"
-                            >
-                                Eliminar
-                            </button>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
     );

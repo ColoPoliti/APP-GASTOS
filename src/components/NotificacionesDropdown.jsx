@@ -127,22 +127,23 @@ export default function NotificacionesDropdown() {
         <div className="relative inline-block text-left" ref={dropdownRef}>
             <button
                 onClick={abrirDropdown}
-                className="relative p-2 text-white hover:opacity-80 focus:outline-none"
+                className="relative text-white hover:opacity-80 focus:outline-none"
             >
                 <FaBell className="text-xl md:text-2xl" />
+                
                 {noLeidas && (
-                    <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border border-white"></span>
+                    <span className="absolute top-1 right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse border border-white"></span>
                 )}
             </button>
 
             {mostrarDropdown && (
-                <div className="absolute right-0 mt-2 w-72 md:w-80 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 text-white">
-                    <div className="p-3 font-semibold border-b border-slate-800 text-indigo-300 text-sm">
+                <div className="absolute right-0 mt-4 w-72 md:w-80 dark:bg-slate-900 bg-white dark:border dark:border-slate-700 border border-slate-300 shadow z-50 text-white">
+                    <div className="p-3 font-semibold border-b dark:border-slate-800 border-slate-300 dark:text-cyan-300 text-slate-500  text-sm">
                         Notificaciones
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                         {notificaciones.length === 0 ? (
-                            <div className="p-4 text-sm text-slate-400 text-center">
+                            <div className="p-4 text-sm dark:text-slate-400 text-slate-950 text-center">
                                 No tenés notificaciones nuevas
                             </div>
                         ) : (
@@ -152,11 +153,11 @@ export default function NotificacionesDropdown() {
                                     <div
                                         key={notif.id}
                                         onClick={() => esInvitacion && handleClicNotificacion(notif)}
-                                        className={`p-3 text-xs md:text-sm border-b border-slate-800/60 transition-colors ${
-                                            !notif.leido ? 'bg-indigo-950/40 font-medium text-indigo-200' : 'text-slate-300'
+                                        className={`p-3 text-xs md:text-sm border-b dark:border-slate-800 border-slate-300 transition-colors ${
+                                            !notif.leido ? 'bg-indigo-950/40 dark:text-slate-400 text-slate-950 ' : 'dark:text-slate-300  text-slate-950'
                                         } ${esInvitacion ? 'cursor-pointer hover:bg-indigo-900/40 hover:text-white' : ''}`}
                                     >
-                                        <p>{notif.mensaje}</p>
+                                        <p className="dark:text-white text-slate-800">{notif.mensaje}</p>
                                         {esInvitacion && (
                                             <span className="text-[11px] text-indigo-400 font-semibold mt-1 block underline">
                                                 👉 Gestionar invitación
