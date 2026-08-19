@@ -109,7 +109,7 @@ export default function Dashboard() {
         };
     }, [hogarId]);
 
-    // Si el usuario o las invitaciones siguen cargando, mostramos el loader general
+    // 1. Si el usuario, el contexto o las invitaciones siguen cargando, mostramos el loader general
     if (loading || verificandoInvitacion) {
         return (
             <div className="min-h-screen dark:bg-slate-950 bg-slate-900 flex flex-col items-center justify-center text-slate-400 space-y-4">
@@ -119,7 +119,7 @@ export default function Dashboard() {
         );
     }
 
-    // Si no hay hogar y tampoco invitación, pasamos al setup
+    // 2. Si terminó de cargar y comprobamos que no hay hogar ni invitación, recién ahí vamos al setup
     if (!hogarId && !invitacionPendiente) {
         return (
             <SetupHogar 
