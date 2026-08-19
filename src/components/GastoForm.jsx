@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { FaPlus } from "react-icons/fa";
-
+import toast from 'react-hot-toast';
 
 export default function GastoForm({ gastoEditando, categorias, onGuardar, onCancelar, hogarId, sesionId }) {
   const [monto, setMonto] = useState('');
@@ -32,7 +32,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
       monto: parseFloat(monto), 
       descripcion: descripcion, 
       categoria_id: categoriaId,
-      hogar_id: hogarId,        
+      hogar_id: hogarId,      
       pagado_por: sesionId      
     };
 
@@ -40,9 +40,11 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
         if (gastoEditando) {
             const { error } = await supabase.from('gastos').update(payload).eq('id', gastoEditando.id);
             if (error) throw error;
+            toast.success('¡Gasto actualizado con éxito!', { position: 'bottom-center' });
         } else {
             const { error } = await supabase.from('gastos').insert([payload]);
             if (error) throw error;
+            toast.success('¡Gasto guardado con éxito!', { position: 'bottom-center' });
         }
         
         onGuardar();
@@ -52,7 +54,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
         setIsOpen(false); // Cierra el modal al guardar con éxito
     } catch (error) {
         console.error("Error detallado de Supabase:", error);
-        alert("Error al guardar: " + error.message);
+        toast.error("Error al guardar: " + error.message, { position: 'bottom-center' });
     } finally {
         setCargando(false);
     }
@@ -84,7 +86,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
             <button 
               type="button"
               onClick={cerrarModal}
-              className="absolute w-full top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold"
             >
               ✕
             </button>
@@ -127,13 +129,14 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
                 <button 
                   disabled={cargando} 
                   type="submit" 
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-indigo-600/30"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-indigo-600/30 disabled:opacity-50"
                 >
                   {cargando ? 'Guardando...' : (gastoEditando ? 'Actualizar Gasto' : 'Confirmar')}
                 </button>
                 <button 
                   type="button" 
                   onClick={cerrarModal} 
+                  disabled={cargando}
                   className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold"
                 >
                   Cancelar

@@ -1,10 +1,10 @@
 import React from 'react';
 import { supabase } from '../supabaseClient.js';
 import { useUser } from '../context/UserContext.jsx';
-
+import toast from 'react-hot-toast';
 
 export default function AceptarInvitacion({ invitacion }) {
-  const { refrescarPerfil } = useUser(); // 2. USALO
+  const { refrescarPerfil } = useUser();
 
     const aceptar = async () => {
         try {
@@ -27,12 +27,17 @@ export default function AceptarInvitacion({ invitacion }) {
             // 3. ¡EL TRUCO!: Refrescar el contexto ANTES de recargar
             await refrescarPerfil(); 
 
-            window.location.reload();
+            toast.success('¡Te uniste al hogar con éxito!', { position: 'bottom-center' });
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error("Error capturado:", error);
-            alert("Error al guardar: " + error.message);
+            toast.error("Error al guardar: " + error.message, { position: 'bottom-center' });
         }
     };
+
     return (
         <button 
             onClick={aceptar}

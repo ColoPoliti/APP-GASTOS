@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { FaUserPlus, FaTimes } from "react-icons/fa";
+import toast from 'react-hot-toast';
 
 export default function InvitarColaborador({ hogarId }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,12 +54,12 @@ export default function InvitarColaborador({ hogarId }) {
           });
       }
 
-      alert("¡Invitación enviada a " + email + "!");
+      toast.success("¡Invitación enviada a " + email + "!", { position: 'bottom-center' });
       setEmail('');
       setIsOpen(false);
     } catch (err) {
       console.error("Error al enviar invitación:", err);
-      alert("Error al enviar invitación: " + err.message);
+      toast.error("Error al enviar invitación: " + err.message, { position: 'bottom-center' });
     } finally {
       setLoading(false);
     }

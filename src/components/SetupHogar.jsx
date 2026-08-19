@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
+import toast, { Toaster } from 'react-hot-toast';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 export default function SetupHogar({ userId, onHogarSet }) {
   const { actualizarHogar } = useUser();
@@ -94,9 +96,11 @@ export default function SetupHogar({ userId, onHogarSet }) {
       setMisHogares(prev => [...prev, nuevoHogar]); 
       setTempHogar(''); 
       if (onHogarSet) onHogarSet(nuevoHogar.id, codigoHogar);
+      
+      toast.success("¡Bolsillo creado correctamente!");
     } catch (err) {
       console.error(err);
-      alert("Error al crear el Bolsillo");
+      toast.error("Error al crear el Bolsillo");
     } finally {
       setLoading(false);
     }
@@ -122,17 +126,18 @@ export default function SetupHogar({ userId, onHogarSet }) {
         actualizarHogar(hogar.id, hogar.codigo);
 
         if (onHogarSet) onHogarSet(hogar.id, hogar.codigo);
+        toast.success(`Te uniste al Bolsillo ${hogar.codigo}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Error al unirse al Bolsillo");
+      toast.error("Error al unirse al Bolsillo");
     } finally {
       setLoading(false);
     }
   };
 
-  // 5. Eliminar Hogar de forma directa
-  const eliminarHogar = async () => {
+  // 5. Eliminar Hogar validando antes de mostrar confirmación
+  const confirmarEliminarHogar = async () => {
     setLoading(true);
     const { data: hogarInfo, error: fetchError } = await supabase
       .from('hogares')
@@ -140,54 +145,111 @@ export default function SetupHogar({ userId, onHogarSet }) {
       .eq('codigo', tempHogar.toUpperCase())
       .single();
 
+    setLoading(false);
+
     if (fetchError || !hogarInfo) {
-      alert("No se pudo verificar la propiedad del Bolsillo.");
-      setLoading(false);
+      toast.error("No se pudo verificar la propiedad del Bolsillo.");
       return;
     }
 
     if (hogarInfo.creador_id !== userId) {
-      alert("⚠️ Solo el creador de este Bolsillo puede eliminarlo.");
-      setLoading(false);
+      toast(
+        (t) => (
+          <span className="flex items-center gap-2 text-amber-300 font-medium text-m">
+            <FaExclamationTriangle className="text-amber-400 text-base shrink-0" />
+            Solo el creador de este Bolsillo puede eliminarlo.
+          </span>
+        ),
+        {
+          style: {
+            background: '#451a03',
+            color: '#fde047',
+            border: '1px solid #b45309',
+          },
+        }
+      );
       return;
     }
 
-    if (!window.confirm("¿Estás seguro? Esto borrará el Bolsillo y todos sus datos permanentemente.")) {
-      setLoading(false);
-      return;
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <p className="text-m text-slate-200 font-medium">
+          ¿Estás seguro? Esto borrará el Bolsillo y todos sus datos permanentemente.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              ejecutarEliminacionHogar(hogarInfo.id);
+            }}
+            className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors"
+          >
+            Sí, eliminar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      position: 'top-center',
+      style: {
+        background: '#1e293b',
+        color: '#f8fafc',
+        border: '1px solid #334155',
+        maxWidth: '350px',
+      },
+    });
+  };
 
+  const ejecutarEliminacionHogar = async (hogarId) => {
+    setLoading(true);
     try {
       const { error: hogarError } = await supabase
         .from('hogares')
         .delete()
-        .eq('id', hogarInfo.id);
+        .eq('id', hogarId);
 
       if (hogarError) throw hogarError;
       
       actualizarHogar(null, null);
       
-      setMisHogares(prev => prev.filter(h => h.id !== hogarInfo.id));
+      setMisHogares(prev => prev.filter(h => h.id !== hogarId));
       setTempHogar(''); 
       setExiste(false);
       
-      alert("Bolsillo eliminado correctamente.");
+      toast.success("Bolsillo eliminado correctamente.");
     } catch (err) {
       console.error("Error detallado al eliminar:", err);
-      alert("Error al intentar eliminar el Bolsillo.");
+      toast.error("Error al intentar eliminar el Bolsillo.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-      <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center max-w-sm w-full shadow-2xl">
-        <h2 className="text-white text-xl font-bold mb-2">¡Bienvenido!</h2>
-        <p className="text-slate-400 mb-6 text-sm">Seleccioná o creá tu Bolsillo para continuar:</p>
+    <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-950 dark:text-white text-slate-950">
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          style: {
+            background: '#1e293b',
+            color: '#f8fafc',
+            border: '1px solid #334155',
+          },
+        }} 
+      />
+
+      <div className="relative z-[9991] bg-white dark:bg-slate-900 p-8 rounded-xl border dark:border-slate-800 text-center max-w-sm w-full shadow-lg">
+        <h2 className=" text-xl font-bold mb-2">¡Bienvenido!</h2>
+        <p className="dark:text-slate-400 mb-6 text-sm">Seleccioná o creá tu Bolsillo para continuar:</p>
         
         <input 
-          className="w-full p-3 mb-4 bg-slate-950 text-white font-semibold border border-slate-700 rounded-lg uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition-colors" 
+          className="w-full p-3 mb-4 bg-white  dark:bg-slate-950 dark:text-white text-slate-950 font-semibold border border-slate-700 rounded-full uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition-colors" 
           placeholder="Código de Bolsillo" 
           value={tempHogar} 
           onChange={(e) => setTempHogar(e.target.value.toUpperCase())} 
@@ -199,11 +261,10 @@ export default function SetupHogar({ userId, onHogarSet }) {
               <button
                 key={hogar.id}
                 onClick={() => {
-                  // SOLO rellena el input y valida, permitiendo confirmación previa
                   setTempHogar(hogar.codigo);
                   setExiste(true);
                 }}
-                className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-xs font-medium hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700"
+                className="px-3 py-1 bg-indigo-800 dark:bg-indigo-800 text-slate-300 rounded-full text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700"
               >
                 {hogar.codigo}
               </button>
@@ -214,11 +275,11 @@ export default function SetupHogar({ userId, onHogarSet }) {
         {tempHogar.length >= 3 && (
           <div className="mb-5 text-sm">
             {existe ? (
-              <div className="p-3 bg-emerald-950/40 border border-emerald-600/50 rounded-lg text-emerald-400 font-medium flex items-center justify-center gap-2">
+              <div className="p-3 dark:bg-emerald-950/40 bg-emerald-500 border border-emerald-600/50 rounded-lg dark:text-emerald-400  text-emerald-900 font-bold flex items-center justify-center gap-2">
                 <i className="fa fa-check-circle text-base"></i> ¡El Bolsillo existe! Podés unirte.
               </div>
             ) : (
-              <div className="p-3 bg-amber-950/40 border border-amber-600/50 rounded-lg text-amber-400 font-medium flex items-center justify-center gap-2">
+              <div className="p-3 dark:bg-amber-950/40 bg-amber-500 border border-amber-600/50 rounded-lg dark:text-amber-400 text-amber-800 font-bold flex items-center justify-center gap-2">
                 <i className="fa fa-exclamation-triangle text-base"></i> El Bolsillo no existe. Podés crearlo.
               </div>
             )}
@@ -239,8 +300,8 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
         {existe && misHogares.find(h => h.codigo === tempHogar.toUpperCase()) && (
           <button 
-            onClick={eliminarHogar}
-            className="w-full mt-4 p-2 text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors underline"
+            onClick={confirmarEliminarHogar}
+            className="w-full mt-4 p-2 dark:text-rose-400 text-rose-900 hover:text-rose-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors underline"
           >
             <i className="fa fa-trash"></i> Eliminar este Bolsillo
           </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { FaPlus } from "react-icons/fa";
+import toast from 'react-hot-toast';
 
 export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, onCancelar, onEliminar }) {
     const [nombre, setNombre] = useState('');
@@ -24,16 +25,25 @@ export default function CategoriaForm({ hogarId, categoriaEditando, onGuardar, o
 
         const datos = { nombre: nombre.toUpperCase(), hogar_id: hogarId, color };
 
-        if (categoriaEditando) {
-            await supabase.from('categorias').update(datos).eq('id', categoriaEditando.id);
-        } else {
-            await supabase.from('categorias').insert([datos]);
-        }
+        try {
+            if (categoriaEditando) {
+                const { error } = await supabase.from('categorias').update(datos).eq('id', categoriaEditando.id);
+                if (error) throw error;
+                toast.success('¡Categoría actualizada con éxito!', { position: 'bottom-center' });
+            } else {
+                const { error } = await supabase.from('categorias').insert([datos]);
+                if (error) throw error;
+                toast.success('¡Categoría creada con éxito!', { position: 'bottom-center' });
+            }
 
-        setNombre('');
-        setColor('#6366f1');
-        setIsOpen(false);
-        onGuardar(); 
+            setNombre('');
+            setColor('#6366f1');
+            setIsOpen(false);
+            onGuardar(); 
+        } catch (error) {
+            console.error("Error al guardar categoría:", error);
+            toast.error("Error al guardar categoría: " + error.message, { position: 'bottom-center' });
+        }
     };
 
     const cerrarModal = () => {

@@ -82,6 +82,12 @@ export default function NotificacionesDropdown() {
         if (!noLeidas || !sesion?.user?.id) return;
 
         setNoLeidas(false);
+        
+        // Actualizar el estado visual al instante
+        setNotificaciones(prev => 
+            prev.map(n => ({ ...n, leido: true }))
+        );
+
         try {
             await supabase
                 .from('notificaciones')
@@ -93,15 +99,14 @@ export default function NotificacionesDropdown() {
         }
     };
 
-const handleClicNotificacion = async (notif) => {
-    if (notif.invitacion_id) {
-        try {
-            // ACÁ ESTÁ LA LÍNEA QUE BUSCÁS
-            const { data, error } = await supabase
-                .from('invitaciones')
-                .select('*, hogares(codigo)') // <--- ¡Acá es, amiguito!
-                .eq('id', notif.invitacion_id)
-                .single();
+    const handleClicNotificacion = async (notif) => {
+        if (notif.invitacion_id) {
+            try {
+                const { data, error } = await supabase
+                    .from('invitaciones')
+                    .select('*, hogares(codigo)')
+                    .eq('id', notif.invitacion_id)
+                    .single();
 
                 if (error) throw error;
 
