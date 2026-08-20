@@ -10,13 +10,12 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
   const [cargando, setCargando] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Cada vez que 'gastoEditando' cambie, el formulario se autorellena y abre el modal
   useEffect(() => {
     if (gastoEditando) {
       setMonto(gastoEditando.monto);
       setDescripcion(gastoEditando.descripcion);
       setCategoriaId(gastoEditando.categoria_id);
-      setIsOpen(true); // Se abre automáticamente al editar
+      setIsOpen(true);
     } else {
       setMonto('');
       setDescripcion('');
@@ -51,7 +50,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
       setMonto('');
       setDescripcion('');
       setCategoriaId('');
-      setIsOpen(false); // Cierra el modal al guardar con éxito
+      setIsOpen(false);
     } catch (error) {
       console.error("Error detallado de Supabase:", error);
       toast.error("Error al guardar: " + error.message, { position: 'bottom-center' });
@@ -67,77 +66,84 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
 
   return (
     <>
-      {/* Botón para abrir el modal de Nuevo Gasto (si no se está editando) */}
       {!gastoEditando && (
         <button
-  onClick={() => setIsOpen(true)}
-  className="w-full md:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
->
-  <span><FaPlus /></span> Cargar Nuevo Gasto
-</button>
+          onClick={() => setIsOpen(true)}
+          className="w-full md:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+        >
+          <span><FaPlus /></span> Cargar Nuevo Gasto
+        </button>
       )}
 
-      {/* Modal que solo se muestra si isOpen es true */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/60 bg-white/20 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-2xl p-6 shadow relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/60 bg-white/20 backdrop-blur-sm p-3 sm:p-4">
+          <div className="w-full max-w-sm dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
 
-            {/* Botón de cierre superior (X) */}
             <button
               type="button"
               onClick={cerrarModal}
-              className="absolute top-4 right-4 dark:text-slate-400 text-slate-400 dark:hover:text-white hover:text-slate-950 transition-colors text-lg font-bold"
+              className="absolute top-3 right-3 dark:text-slate-400 text-slate-400 dark:hover:text-white hover:text-slate-950 transition-colors p-1"
             >
-              <FaTimes className="w-5 h-5" />
+              <FaTimes className="w-4 h-4" />
             </button>
 
-            <h3 className="text-base font-bold uppercase mb-4 text-slate-950 dark:text-white">
+            <h3 className="text-sm sm:text-base font-bold uppercase mb-3 text-slate-950 dark:text-white tracking-wider">
               {gastoEditando ? 'Editar Gasto' : 'Cargar Nuevo Gasto'}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                required
-                type="number"
-                placeholder="Monto"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600"
-                autoFocus
-              />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1 ml-3 uppercase">Monto</label>
+                <input
+                  required
+                  type="number"
+                  step="any"
+                  placeholder="Ej: 5000"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  autoFocus
+                />
+              </div>
 
-              <input
-                required
-                type="text"
-                placeholder="Descripción"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600"
-              />
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1 ml-3 uppercase">Descripción</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej: Supermercado"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
 
-              <select
-                required
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600"
-              >
-                <option value="">Seleccionar categoría...</option>
-                {categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.nombre}</option>)}
-              </select>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1 ml-3 uppercase">Categoría</label>
+                <select
+                  required
+                  value={categoriaId}
+                  onChange={(e) => setCategoriaId(e.target.value)}
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="">Seleccionar categoría...</option>
+                  {categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.nombre}</option>)}
+                </select>
+              </div>
 
               <div className="flex gap-2 pt-2">
                 <button
                   disabled={cargando}
                   type="submit"
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-cyan-600/30 disabled:opacity-50"
+                  className="flex-1 bg-cyan-600 hover:bg-cyan-500 rounded-xl py-2.5 text-sm font-bold transition text-white shadow-md shadow-cyan-600/20 disabled:opacity-50"
                 >
-                  {cargando ? 'Guardando...' : (gastoEditando ? 'Actualizar Gasto' : 'Confirmar')}
+                  {cargando ? 'Guardando...' : (gastoEditando ? 'Actualizar' : 'Confirmar')}
                 </button>
                 <button
                   type="button"
                   onClick={cerrarModal}
                   disabled={cargando}
-                  className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold"
+                  className="px-4 py-2.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl transition text-sm font-bold"
                 >
                   Cancelar
                 </button>

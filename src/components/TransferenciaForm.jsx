@@ -2,18 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { GiTakeMyMoney } from "react-icons/gi";
 
-export default function TransferenciaForm({ hogarId, sesionId, miembros = [], onGuardar }) {
+export default function TransferenciaForm({ hogarId, sesionId, miembros = [], destinatarioPreseleccionado = '', onGuardar }) {
   const [monto, setMonto] = useState('');
-  const [recibidoPor, setRecibidoPor] = useState('');
+  const [recibidoPor, setRecibidoPor] = useState(destinatarioPreseleccionado);
   const [cargando, setCargando] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Filtrar los miembros para que el usuario pueda elegir a quién le transfiere (excluyéndose a sí mismo)
-  const otrosMiembros = miembros.filter(m => m.id !== sesionId);
+  useEffect(() => {
+    if (destinatarioPreseleccionado) {
+      setRecibidoPor(destinatarioPreseleccionado);
+    }
+  }, [destinatarioPreseleccionado]);
+
+  // Blindamos la comparación pasando ambos a String y recortando espacios por seguridad
+  const idSesionLimpio = sesionId ? String(sesionId).trim() : '';
+  const otrosMiembros = miembros.filter(m => String(m.id).trim() !== idSesionLimpio);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!monto || !recibidoPor) return;
+    
+    // Si por alguna razón el usuario intenta mandarse una transferencia a sí mismo, frenamos acá
+    if (String(recibidoPor).trim() === idSesionLimpio) {
+      alert("No te podés registrar una transferencia a vos mismo, amiguito.");
+      return;
+    }
+
     setCargando(true);
 
     const payload = {
@@ -31,7 +45,7 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
       setMonto('');
       setRecibidoPor('');
       setIsOpen(false);
-      onGuardar(); // Refrescar los datos en el padre
+      if (onGuardar) onGuardar();
     } catch (error) {
       console.error("Error al registrar la transferencia:", error);
       alert("Hubo un error al registrar la transferencia: " + error.message);
@@ -42,21 +56,17 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
 
   return (
     <>
-      {/* Botón para abrir el modal */}
-      <button
+      <button 
         onClick={() => setIsOpen(true)}
-        className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20"
       >
         <span><GiTakeMyMoney /></span> Registrar Transferencia
       </button>
 
-      {/* Modal flotante */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-
-            {/* Botón de cierre */}
-            <button
+            <button 
               type="button"
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold"
@@ -67,14 +77,14 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
             <h3 className="text-base font-bold uppercase mb-4 text-white">
               Registrar Transferencia
             </h3>
-
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">¿A quién le transferiste?</label>
-                <select
-                  required
-                  value={recibidoPor}
-                  onChange={(e) => setRecibidoPor(e.target.value)}
+                <select 
+                  required 
+                  value={recibidoPor} 
+                  onChange={(e) => setRecibidoPor(e.target.value)} 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">Seleccionar destinatario...</option>
@@ -88,14 +98,14 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
 
               <div>
                 <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">Monto</label>
-                <input
-                  required
-                  type="number"
+                <input 
+                  required 
+                  type="number" 
                   step="0.01"
-                  placeholder="Ej: 15000"
-                  value={monto}
-                  onChange={(e) => setMonto(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="Ej: 15000" 
+                  value={monto} 
+                  onChange={(e) => setMonto(e.target.value)} 
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500" 
                 />
               </div>
 
@@ -104,16 +114,16 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], on
               </p>
 
               <div className="flex gap-2 pt-2">
-                <button
-                  disabled={cargando}
-                  type="submit"
+                <button 
+                  disabled={cargando} 
+                  type="submit" 
                   className="flex-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-emerald-600/30"
                 >
                   {cargando ? 'Guardando...' : 'Confirmar Transferencia'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
+                <button 
+                  type="button" 
+                  onClick={() => setIsOpen(false)} 
                   className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold"
                 >
                   Cancelar

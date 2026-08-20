@@ -4,7 +4,7 @@ import HistorialGastos from './HistorialGastos';
 import GastoForm from './GastoForm';
 import CategoriaForm from './CategoriaForm';
 import TransferenciaForm from './TransferenciaForm';
-import { FaFolder, FaPen } from "react-icons/fa";
+import { FaFolder, FaPen, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { obtenerEstiloCategoria } from "../utils/gastosUtils";
 import { useTheme } from '../context/ThemeContext.jsx';
 
@@ -18,6 +18,10 @@ export default function GestionGastos({ hogarId, sesion }) {
     const [gastoEditando, setGastoEditando] = useState(null);
     const [tabActiva, setTabActiva] = useState('todos');
     const [categoriaActual, setCategoriaActual] = useState(0);
+
+    // Estados para la paginación (Podes cambiar cuántos mostrar por página acá)
+    const [paginaActual, setPaginaActual] = useState(1);
+    const gastosPorPagina = 5; // Cambialo a 10 si preferís mostrar más
 
     const traerCategorias = async () => {
         if (!hogarId) return;
@@ -66,20 +70,36 @@ export default function GestionGastos({ hogarId, sesion }) {
         else traerGastos();
     };
 
+    // 1. Filtramos por la solapa activa
     const gastosFiltrados = tabActiva === 'todos'
         ? gastos
         : gastos.filter(g => (g.perfiles?.nombre || g.perfiles?.email || 'Invitado') === tabActiva);
 
+    // 2. Ordenamos del más nuevo al más viejo (usando created_at o fecha)
+    const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
+        return new Date(b.created_at || b.fecha || 0) - new Date(a.created_at || a.fecha || 0);
+    });
+
+    // 3. Cálculos de Paginación seguros
+    const totalPaginas = Math.max(1, Math.ceil(gastosOrdenados.length / gastosPorPagina));
+    const paginaSegura = Math.min(paginaActual, totalPaginas);
+    
+    const indiceUltimoGasto = paginaSegura * gastosPorPagina;
+    const indicePrimerGasto = indiceUltimoGasto - gastosPorPagina;
+    const gastosPaginados = gastosOrdenados.slice(indicePrimerGasto, indiceUltimoGasto);
+
     const nombresUsuarios = [...new Set(gastos.map(g => g.perfiles?.nombre || g.perfiles?.email || 'Invitado'))];
+
+    const cambiarTab = (nuevoTab) => {
+        setTabActiva(nuevoTab);
+        setPaginaActual(1);
+    };
 
     const moverCarrusel = (direccion) => {
         if (categorias.length === 0) return;
-        setCategoriaActual((actual) => {
-            const nuevoIndice = actual + direccion;
-            if (nuevoIndice < 0) return 0;
-            if (nuevoIndice >= categorias.length) return categorias.length - 1;
-            return nuevoIndice;
-        });
+        const nuevoIndice = categoriaActual + direccion;
+        if (nuevoIndice < 0 || nuevoIndice >= categorias.length) return;
+        irACategoria(nuevoIndice);
     };
 
     const irACategoria = (index) => {
@@ -104,7 +124,7 @@ export default function GestionGastos({ hogarId, sesion }) {
     };
 
     return (
-        <div className="w-full max-w-[90vw] overflow-x-hidden space-y-8 sm:space-y-10  box-border">
+        <div className="w-full max-w-[90vw] overflow-x-hidden space-y-8 sm:space-y-10 box-border">
             {/* Formularios: Categoría, Gasto y Transferencia */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start w-full max-w-full">
                 <div className="w-full min-w-0">
@@ -135,18 +155,9 @@ export default function GestionGastos({ hogarId, sesion }) {
                         onCancelar={() => setGastoEditando(null)}
                     />
                 </div>
-
-                <div className="w-full min-w-0">
-                    <TransferenciaForm
-                        hogarId={hogarId}
-                        sesionId={sesion?.user?.id}
-                        miembros={miembros}
-                        onGuardar={() => traerTransferencias()}
-                    />
-                </div>
             </div>
 
-            {/* Listado de Categorías (Carrusel con ancho acotado) */}
+            {/* Listado de Categorías (Carrusel) */}
             <div className="space-y-3 w-full max-w-full">
                 <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <FaFolder className="text-indigo-400" size={14} /> Categorías
@@ -225,58 +236,62 @@ export default function GestionGastos({ hogarId, sesion }) {
                 )}
             </div>
 
-            {/* Historial de Gastos y Pestañas */}
+            {/* Historial de Gastos, Pestañas y Paginación */}
             <div className="space-y-4 w-full max-w-full">
+                {/* Pestañas (Tabs) */}
                 <div className="flex gap-2 mb-4 overflow-x-auto pb-2 w-full max-w-full" style={{ scrollbarWidth: 'none' }}>
                     <button
-                        onClick={() => setTabActiva('todos')}
+                        onClick={() => cambiarTab('todos')}
                         className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                     >
-                        Todos
+                        Todos <span className={` rounded-full p-1 w-20 h-20 ${tabActiva === 'todos' ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-400'}`}>{gastos.length}</span>
                     </button>
-                    {nombresUsuarios.map(nombre => (
-                        <button
-                            key={nombre}
-                            onClick={() => setTabActiva(nombre)}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
-                        >
-                            {nombre}
-                        </button>
-                    ))}
+                    {nombresUsuarios.map(nombre => {
+                        const cant = gastos.filter(g => (g.perfiles?.nombre || g.perfiles?.email || 'Invitado') === nombre).length;
+                        return (
+                            <button
+                                key={nombre}
+                                onClick={() => cambiarTab(nombre)}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                            >
+                                {nombre} <span className={`rounded-full p-1 w-20 h-20 ${tabActiva === nombre ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-400'}`}>{cant}</span>
+                            </button>
+                        );
+                    })}
                 </div>
 
+                {/* Listado de Gastos Paginados para la Tab Activa */}
                 <div className="w-full max-w-full overflow-x-auto">
                     <HistorialGastos
-                        gastos={gastosFiltrados}
+                        gastos={gastosPaginados}
                         sesionId={sesion?.user?.id}
                         onEditar={(gasto) => setGastoEditando(gasto)}
                         onEliminar={(gasto) => eliminarGasto(gasto)}
                     />
                 </div>
-            </div>
 
-            {/* Listado de Transferencias */}
-            <div className="space-y-3 w-full max-w-full">
-                <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">
-                    Transferencias Registradas
-                </h3>
-                <div className="w-full max-w-full space-y-2">
-                    {transferencias.map(t => (
-                        <div key={t.id} className="flex justify-between items-center p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm w-full max-w-full box-border">
-                            <div className="min-w-0 pr-2">
-                                <span className="text-slate-400 block text-xs">Fecha: {new Date(t.fecha).toLocaleDateString()}</span>
-                                <span className="text-white font-medium truncate block">Monto: <strong className="text-emerald-400">${Number(t.monto).toLocaleString('es-AR')}</strong></span>
-                            </div>
-                            {t.enviado_por === sesion?.user?.id && (
-                                <button
-                                    onClick={() => eliminarTransferencia(t.id)}
-                                    className="text-red-400 hover:text-red-300 transition-colors text-xs font-bold flex-shrink-0 ml-2"
-                                >
-                                    Eliminar
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                {/* Controles de Paginación */}
+                <div className="flex justify-between items-center pt-2 px-1 shadow-lg bg-white dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800/65">
+                    <button
+                        onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
+                        disabled={paginaSegura <= 1}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all"
+                    >
+                        <FaChevronLeft size={10} /> Anterior
+                    </button>
+                    
+                    <span className="text-xs text-slate-400 font-medium text-center">
+                        Página <strong className="text-white font-bold">{paginaSegura}</strong> de <strong className="text-white font-bold">{totalPaginas}</strong>
+                        <span className="hidden sm:inline text-slate-500 ml-2">({gastosFiltrados.length} gastos)</span>
+                    </span>
+
+                    <button
+                        onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
+                        disabled={paginaSegura >= totalPaginas}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all"
+                    >
+                        Siguiente <FaChevronRight size={10} />
+                    </button>
                 </div>
             </div>
         </div>

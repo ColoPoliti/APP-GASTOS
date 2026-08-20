@@ -10,15 +10,13 @@ import { UserProvider, useUser } from './context/UserContext.jsx';
 import SetupHogar from "./components/SetupHogar";
 import PaginaHistorial from './pages/PaginaHistorial';
 import PaginaGestionGastos from './pages/PaginaGestionGastos';
+import PaginaTransferencias from './pages/PaginaTransferencias'; // <- 1. Importás la página de transferencias
 import { BounceLoader } from 'react-spinners';
 import CustomToaster from './CustomToaster.jsx';
-
-
 
 function AppContent() {
   const { sesion, loading, hogarId } = useUser();
 
-  // Freno total mientras valida sesión y perfil de usuario
   if (loading) {
     return (
       <div className="flex h-screen bg-slate-950 items-center justify-center">
@@ -33,7 +31,6 @@ function AppContent() {
 
   return (
     <>
-
       <ThemeToggle />
       <div className="flex">
         <main className="flex-1 mt-12 transition-all duration-300">
@@ -44,6 +41,7 @@ function AppContent() {
               <Route path="/graficos" element={<Graficos />} />
               <Route path="/historial" element={<PaginaHistorial />} />
               <Route path="/gestion-gastos" element={<PaginaGestionGastos />} />
+              <Route path="/transferencias" element={<PaginaTransferencias />} /> {/* <- 2. Agregás la ruta acá */}
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
