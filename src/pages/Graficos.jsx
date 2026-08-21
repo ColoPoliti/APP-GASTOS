@@ -134,13 +134,14 @@ export default function Graficos() {
     const totalGeneral = dataGrafico.reduce((acc, curr) => acc + curr.value, 0);
 
     return (
-        <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
-             <div className="mb-8">
-                <h1 className="text-3xl font-black mb-1  mt-12 text-dark dark:text-slate-100">Gestión de Gastos</h1>
+        <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
+            <div className="mb-8">
+                <h1 className="text-3xl font-black mb-1  mt-12 text-dark dark:text-slate-100">Mis Gráficos</h1>
                 <p className="text-slate-400 text-sm">Distribución de Gastos por Categoría</p>
             </div>
 
-
+            <hr className="border-slate-800 my-6" />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
 
                 {/* Lado Izquierdo: Gráfico adaptable */}
@@ -174,15 +175,15 @@ export default function Graficos() {
                 </div>
 
                 {/* Lado Derecho: Lista de Categorías */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 overflow-y-auto pr-1 mt-6">
                     {dataGrafico.map((item, index) => {
                         const colorFinal = item.color !== '#6366f1' ? item.color : COLORS[index % COLORS.length];
                         const porcentaje = totalGeneral > 0 ? ((item.value / totalGeneral) * 100).toFixed(1) : 0;
                         const isSelected = activeIndex === index;
-                        
+
                         // Obtenemos los estilos adaptados a modo claro/oscuro con su color base y contraste
                         const estiloComun = obtenerEstiloCategoriaComun({ color: colorFinal }, theme);
-                        
+
                         // Forzamos que en modo claro use la función de texto ideal para mejor visibilidad, 
                         // y en modo oscuro mantenga el estilo dinámico optimizado.
                         const isDark = theme === 'dark' || (typeof window !== 'undefined' && localStorage.getItem('theme') === 'dark');
@@ -192,11 +193,10 @@ export default function Graficos() {
                             <div
                                 key={index}
                                 onMouseEnter={() => setActiveIndex(index)}
-                                className={`relative overflow-hidden flex items-center justify-between p-3 bg-white dark:bg-slate-900/40 border transition-all cursor-pointer shadow-sm ${
-                                    isSelected 
-                                        ? 'border-2 shadow-md' 
+                                className={`relative overflow-hidden flex items-center justify-between p-3 bg-white dark:bg-slate-900/40 border transition-all cursor-pointer shadow-sm ${isSelected
+                                        ? 'border-2 shadow-md'
                                         : 'border-slate-200 dark:border-slate-800'
-                                }`}
+                                    }`}
                                 style={{
                                     borderColor: isSelected ? colorFinal : undefined
                                 }}
@@ -204,7 +204,7 @@ export default function Graficos() {
                                 {/* Bloque izquierdo aplicando el estilo unificado */}
                                 <span
                                     className="absolute inset-y-0 left-0 px-3.5 flex items-center justify-center text-[16px] font-bold shadow-sm"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: estiloComun.backgroundColor,
                                         color: textColorFinal,
                                         borderRight: `1px solid ${colorFinal}40`

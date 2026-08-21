@@ -14,7 +14,6 @@ export default function PaginaTransferencias() {
         if (!hogarId) return;
         setCargando(true);
         try {
-            // 1. Cargar transferencias del hogar
             const { data: transData, error: transError } = await supabase
                 .from('transferencias')
                 .select('*')
@@ -24,14 +23,12 @@ export default function PaginaTransferencias() {
             if (transError) throw transError;
             setTransferencias(transData || []);
 
-            // 2. Cargar miembros del hogar / perfiles
             const { data: perfilData, error: perfilError } = await supabase
                 .from('perfiles')
                 .select('*');
 
             if (perfilError) throw perfilError;
             setMiembros(perfilData || []);
-
         } catch (error) {
             console.error("Error al cargar datos de transferencias:", error);
         } finally {
@@ -44,30 +41,40 @@ export default function PaginaTransferencias() {
     }, [hogarId]);
 
     return (
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-white">Transferencias</h1>
-                    <p className="text-sm text-slate-400">Gestioná los pagos y movimientos entre los miembros del hogar.</p>
+        <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0 box-border overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
+                <div className="w-full sm:w-auto flex-1 min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-black mb-1 mt-12 text-dark dark:text-slate-100 break-words">
+                        Transferencias
+                    </h1>
+                    <p className="text-slate-400 text-sm break-words">
+                        Gestioná los pagos y movimientos entre los miembros del hogar.
+                    </p>
                 </div>
-                
-                <TransferenciaForm 
-                    hogarId={hogarId}
-                    sesionId={sesion?.user?.id}
-                    miembros={miembros}
-                    onGuardar={cargarDatos}
-                />
+               
+                <div className="w-full sm:w-auto flex-shrink-0">
+                    <TransferenciaForm 
+                        hogarId={hogarId}
+                        sesionId={sesion?.user?.id}
+                        miembros={miembros}
+                        onGuardar={cargarDatos}
+                    />
+                </div>
             </div>
+
+            <hr className="border-slate-800 my-6 w-full" />
 
             {cargando ? (
                 <p className="text-slate-400 text-center py-8">Cargando transferencias...</p>
             ) : (
-                <ListaTransferencias 
-                    transferencias={transferencias}
-                    miembros={miembros}
-                    sesionId={sesion?.user?.id}
-                    onTransferenciaEliminada={cargarDatos}
-                />
+                <div className="w-full overflow-x-auto max-w-full">
+                    <ListaTransferencias 
+                        transferencias={transferencias}
+                        miembros={miembros}
+                        sesionId={sesion?.user?.id}
+                        onTransferenciaEliminada={cargarDatos}
+                    />
+                </div>
             )}
         </div>
     );

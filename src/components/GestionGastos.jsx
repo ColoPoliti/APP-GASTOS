@@ -19,9 +19,9 @@ export default function GestionGastos({ hogarId, sesion }) {
     const [tabActiva, setTabActiva] = useState('todos');
     const [categoriaActual, setCategoriaActual] = useState(0);
 
-    // Estados para la paginación (Podes cambiar cuántos mostrar por página acá)
+    // Estados para la paginación
     const [paginaActual, setPaginaActual] = useState(1);
-    const gastosPorPagina = 5; // Cambialo a 10 si preferís mostrar más
+    const gastosPorPagina = 5;
 
     const traerCategorias = async () => {
         if (!hogarId) return;
@@ -75,7 +75,7 @@ export default function GestionGastos({ hogarId, sesion }) {
         ? gastos
         : gastos.filter(g => (g.perfiles?.nombre || g.perfiles?.email || 'Invitado') === tabActiva);
 
-    // 2. Ordenamos del más nuevo al más viejo (usando created_at o fecha)
+    // 2. Ordenamos del más nuevo al más viejo
     const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
         return new Date(b.created_at || b.fecha || 0) - new Date(a.created_at || a.fecha || 0);
     });
@@ -124,8 +124,8 @@ export default function GestionGastos({ hogarId, sesion }) {
     };
 
     return (
-        <div className="w-full max-w-[90vw] overflow-x-hidden space-y-8 sm:space-y-10 box-border">
-            {/* Formularios: Categoría, Gasto y Transferencia */}
+        <div className="w-full max-w-full overflow-x-hidden space-y-8 sm:space-y-10 box-border">
+            {/* Formularios: Categoría y Gasto */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start w-full max-w-full">
                 <div className="w-full min-w-0">
                     <CategoriaForm
@@ -188,7 +188,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                             return (
                                 <div
                                     key={cat.id}
-                                    className="p-4 border rounded-xl relative group flex-none w-[75%] sm:w-auto sm:flex-auto snap-center box-border"
+                                    className="p-4 border rounded-xl relative group flex-none w-[72vw] max-w-[260px] sm:w-auto sm:flex-auto snap-center box-border"
                                     style={obtenerEstiloCategoria(cat, theme, true)}
                                 >
                                     <span className="block text-[10px] uppercase font-bold opacity-80 truncate pr-6">{cat.nombre}</span>
@@ -242,9 +242,12 @@ export default function GestionGastos({ hogarId, sesion }) {
                 <div className="flex gap-2 mb-4 overflow-x-auto pb-2 w-full max-w-full" style={{ scrollbarWidth: 'none' }}>
                     <button
                         onClick={() => cambiarTab('todos')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                     >
-                        Todos <span className={` rounded-full p-1 w-20 h-20 ${tabActiva === 'todos' ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-400'}`}>{gastos.length}</span>
+                        <span>Todos</span> 
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${tabActiva === 'todos' ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-300'}`}>
+                            {gastos.length}
+                        </span>
                     </button>
                     {nombresUsuarios.map(nombre => {
                         const cant = gastos.filter(g => (g.perfiles?.nombre || g.perfiles?.email || 'Invitado') === nombre).length;
@@ -252,15 +255,18 @@ export default function GestionGastos({ hogarId, sesion }) {
                             <button
                                 key={nombre}
                                 onClick={() => cambiarTab(nombre)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                             >
-                                {nombre} <span className={`rounded-full p-1 w-20 h-20 ${tabActiva === nombre ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-400'}`}>{cant}</span>
+                                <span>{nombre}</span> 
+                                <span className={`px-2 py-0.5 rounded-full text-xs ${tabActiva === nombre ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-300'}`}>
+                                    {cant}
+                                </span>
                             </button>
                         );
                     })}
                 </div>
 
-                {/* Listado de Gastos Paginados para la Tab Activa */}
+                {/* Listado de Gastos Paginados */}
                 <div className="w-full max-w-full overflow-x-auto">
                     <HistorialGastos
                         gastos={gastosPaginados}
@@ -271,7 +277,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                 </div>
 
                 {/* Controles de Paginación */}
-                <div className="flex justify-between items-center pt-2 px-1 shadow-lg bg-white dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800/65">
+                <div className="flex justify-between items-center pt-2 px-1 shadow-lg bg-white dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800/65 w-full box-border">
                     <button
                         onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
                         disabled={paginaSegura <= 1}

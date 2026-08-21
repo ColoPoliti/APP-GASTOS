@@ -1,12 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { GiTakeMyMoney } from "react-icons/gi";
 
-export default function TransferenciaForm({ hogarId, sesionId, miembros = [], destinatarioPreseleccionado = '', onGuardar }) {
+export default function TransferenciaForm({
+  hogarId,
+  sesionId,
+  miembros = [],
+  destinatarioPreseleccionado = '',
+  onGuardar
+}) {
   const [monto, setMonto] = useState('');
-  const [recibidoPor, setRecibidoPor] = useState(destinatarioPreseleccionado);
+  const [recibidoPor, setRecibidoPor] = useState(destinatarioPreseleccionado || '');
   const [cargando, setCargando] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [usuarioActual, setUsuarioActual] = useState(null);
+
+  useEffect(() => {
+    async function obtenerUsuario() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error obteniendo usuario autenticado:', error);
+        return;
+      }
+      setUsuarioActual(user);
+    }
+    obtenerUsuario();
+  }, []);
 
   useEffect(() => {
     if (destinatarioPreseleccionado) {
@@ -14,17 +33,50 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], de
     }
   }, [destinatarioPreseleccionado]);
 
-  // Blindamos la comparación pasando ambos a String y recortando espacios por seguridad
-  const idSesionLimpio = sesionId ? String(sesionId).trim() : '';
-  const otrosMiembros = miembros.filter(m => String(m.id).trim() !== idSesionLimpio);
+  const otrosMiembros = useMemo(() => {
+    if (!usuarioActual) return [];
+
+    return miembros.filter((miembro) => {
+      const perteneceAlHogar =
+        !hogarId ||
+        miembro.hogar_id === hogarId ||
+        miembro.hogarId === hogarId ||
+        (!miembro.hogar_id && !miembro.hogarId);
+
+      if (!perteneceAlHogar) return false;
+
+      const esUsuarioActual =
+        String(miembro.id || '').trim() === String(usuarioActual.id || '').trim() ||
+        String(miembro.user_id || '').trim() === String(usuarioActual.id || '').trim() ||
+        String(miembro.uid || '').trim() === String(usuarioActual.id || '').trim();
+
+      if (esUsuarioActual) return false;
+
+      return true;
+    });
+  }, [miembros, hogarId, usuarioActual]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!monto || !recibidoPor) return;
-    
-    // Si por alguna razón el usuario intenta mandarse una transferencia a sí mismo, frenamos acá
-    if (String(recibidoPor).trim() === idSesionLimpio) {
+
+    if (usuarioActual && String(recibidoPor).trim() === String(usuarioActual.id).trim()) {
       alert("No te podés registrar una transferencia a vos mismo, amiguito.");
+      return;
+    }
+
+    if (sesionId && String(recibidoPor).trim() === String(sesionId).trim()) {
+      alert("No te podés registrar una transferencia a vos mismo, amiguito.");
+      return;
+    }
+
+    const destinatarioValido = otrosMiembros.some(
+      (miembro) => String(miembro.id).trim() === String(recibidoPor).trim()
+    );
+
+    if (!destinatarioValido) {
+      alert("El destinatario seleccionado no pertenece a este hogar.");
       return;
     }
 
@@ -45,6 +97,7 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], de
       setMonto('');
       setRecibidoPor('');
       setIsOpen(false);
+
       if (onGuardar) onGuardar();
     } catch (error) {
       console.error("Error al registrar la transferencia:", error);
@@ -56,20 +109,23 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], de
 
   return (
     <>
-      <button 
+      <button
+        type="button"
         onClick={() => setIsOpen(true)}
         className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20"
       >
-        <span><GiTakeMyMoney /></span> Registrar Transferencia
+        <span><GiTakeMyMoney /></span>
+        Registrar Transferencia
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            <button 
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            
+            <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold z-10"
             >
               ✕
             </button>
@@ -77,35 +133,46 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], de
             <h3 className="text-base font-bold uppercase mb-4 text-white">
               Registrar Transferencia
             </h3>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">¿A quién le transferiste?</label>
-                <select 
-                  required 
-                  value={recibidoPor} 
-                  onChange={(e) => setRecibidoPor(e.target.value)} 
+                <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">
+                  ¿A quién le transferiste?
+                </label>
+                <select
+                  required
+                  value={recibidoPor}
+                  onChange={(e) => setRecibidoPor(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">Seleccionar destinatario...</option>
-                  {otrosMiembros.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre || m.email || 'Miembro'}
+                  {otrosMiembros.map((miembro) => (
+                    <option key={miembro.id} value={miembro.id}>
+                      {miembro.nombre || miembro.email || 'Miembro'}
                     </option>
                   ))}
                 </select>
+
+                {usuarioActual && otrosMiembros.length === 0 && (
+                  <p className="text-xs text-amber-400 mt-2">
+                    No hay otros miembros disponibles en este hogar.
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">Monto</label>
-                <input 
-                  required 
-                  type="number" 
+                <label className="block text-xs text-slate-400 mb-1 uppercase font-semibold">
+                  Monto
+                </label>
+                <input
+                  required
+                  type="number"
                   step="0.01"
-                  placeholder="Ej: 15000" 
-                  value={monto} 
-                  onChange={(e) => setMonto(e.target.value)} 
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500" 
+                  min="0"
+                  placeholder="Ej: 15000"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -114,22 +181,24 @@ export default function TransferenciaForm({ hogarId, sesionId, miembros = [], de
               </p>
 
               <div className="flex gap-2 pt-2">
-                <button 
-                  disabled={cargando} 
-                  type="submit" 
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-emerald-600/30"
+                <button
+                  disabled={cargando || otrosMiembros.length === 0}
+                  type="submit"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-emerald-600/30"
                 >
                   {cargando ? 'Guardando...' : 'Confirmar Transferencia'}
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsOpen(false)} 
+
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
                   className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold"
                 >
                   Cancelar
                 </button>
               </div>
             </form>
+
           </div>
         </div>
       )}

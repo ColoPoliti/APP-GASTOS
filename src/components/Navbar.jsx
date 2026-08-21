@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useUser } from "../context/UserContext.jsx";
 import { supabase } from '../supabaseClient';
 import Dropdown from './Dropdown.jsx';
@@ -47,7 +48,7 @@ const Navbar = () => {
     };
 
     const opciones = [
-        { label: 'Ver Perfil', value: 'perfil' },
+        { label: 'Ver Perfil', path: '/profile' },
         { label: 'Cambiar Compartido', value: 'cambiar_hogar' },
         { label: 'Cerrar Sesión', value: 'logout' }
     ];

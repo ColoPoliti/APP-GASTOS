@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Dropdown({ label, items, onSelect }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function Dropdown({ label, items, onSelect }) {
       {/* Botón activador */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex w-full justify-between items-center rounded-lg  px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 focus:outline-none"
+        className="inline-flex w-full justify-between items-center rounded-lg px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 focus:outline-none cursor-pointer"
       >
         {label}
         <svg className={`ml-2 h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
@@ -30,20 +31,37 @@ export default function Dropdown({ label, items, onSelect }) {
 
       {/* Menú desplegable */}
       {isOpen && (
-        <div className="absolute right-1 z-10 mt-4 w-48 origin-top-right shadow  dark:bg-slate-900 bg-white dark:border dark:border-slate-700  ring-1 ring-black ring-opacity-5 focus:outline-none animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute right-1 z-10 mt-4 w-48 origin-top-right shadow dark:bg-slate-900 bg-white dark:border dark:border-slate-700 ring-1 ring-black ring-opacity-5 focus:outline-none animate-in fade-in zoom-in-95 duration-200 rounded-xl overflow-hidden">
           <div className="py-1">
-            {items.map((item, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  onSelect(item);
-                  setIsOpen(false);
-                }}
-                className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:font-bold transition-colors text-left"
-              >
-                {item.label}
-              </button>
-            ))}
+            {items.map((item, index) => {
+              // Si el ítem tiene un path, usamos el componente Link de React Router
+              if (item.path) {
+                return (
+                  <Link
+                    key={index}
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
+                    className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:text-white hover:font-bold transition-colors text-left"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+
+              // Si no tiene path, mantenemos el comportamiento original con onSelect (ej: Cerrar Sesión)
+              return (
+                <button
+                  key={index}
+                  onClick={() => {
+                    if (onSelect) onSelect(item);
+                    setIsOpen(false);
+                  }}
+                  className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:text-white hover:font-bold transition-colors text-left cursor-pointer"
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
