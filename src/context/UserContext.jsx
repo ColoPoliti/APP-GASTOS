@@ -39,13 +39,37 @@ export function UserProvider({ children }) {
     }
   };
 
-  const fetchPerfil = async (userId) => {
+  const fetchPerfil = async (currentUser) => {
     try {
-      const { data: perfil } = await supabase
+      const userId = currentUser.id;
+      
+      // 1. Buscamos si el perfil ya existe
+      let { data: perfil, error: errorPerfil } = await supabase
         .from('perfiles')
         .select('nombre, hogar_id')
         .eq('id', userId)
         .single();
+
+      // 2. Si no existe (es el primer login tras confirmar correo), lo creamos al vuelo
+      if (!perfil) {
+        const { data: nuevoPerfil, error: errorCreacion } = await supabase
+          .from('perfiles')
+          .insert({
+            id: userId,
+            email: currentUser.email,
+            nombre: currentUser.user_metadata?.nombre || 'Usuario',
+            telefono: currentUser.user_metadata?.telefono || ''
+          })
+          .select('nombre, hogar_id')
+          .single();
+
+        if (errorCreacion) {
+          console.error("Error al crear el perfil post-confirmación:", errorCreacion);
+        } else {
+          perfil = nuevoPerfil;
+          console.log("¡Perfil creado con éxito en el primer login tras confirmar mail!");
+        }
+      }
 
       if (perfil) {
         setNombreUsuario(perfil.nombre || '');
@@ -71,13 +95,13 @@ export function UserProvider({ children }) {
         }
       }
     } catch (err) {
-      console.error("Error al traer perfil:", err);
+      console.error("Error al traer o crear el perfil:", err);
     }
   };
 
   const refrescarPerfil = async () => {
-    if (user?.id) {
-      await fetchPerfil(user.id);
+    if (user) {
+      await fetchPerfil(user);
     }
   };
 
@@ -95,7 +119,7 @@ export function UserProvider({ children }) {
           setUser(currentUser);
           
           if (currentUser) {
-            await fetchPerfil(currentUser.id);
+            await fetchPerfil(currentUser);
           }
         }
       } catch (error) {
@@ -118,7 +142,7 @@ export function UserProvider({ children }) {
         setUser(currentUser);
 
         if (currentUser) {
-          await fetchPerfil(currentUser.id);
+          await fetchPerfil(currentUser);
         } else {
           setNombreUsuario('');
           actualizarHogar(null, null);

@@ -1,9 +1,9 @@
 export const navLinks = [
   { id: 'dashboard', label: 'Dashboard', icon: 'fa-home', path: '/dashboard' },
-  { id: 'graficos', label: 'Gráficos', icon: 'fa-line-chart', path: '/graficos' },
-  { id: 'historial', label: 'Gastos por Usuarios', icon: 'fa-users', path: '/historial' },
   { id: 'gestion-gastos', label: 'Gestión de Gastos', icon: 'fa-plus-circle', path: '/gestion-gastos' },
-  { id: 'transferencias', label: 'Transferencias', icon: 'fa-exchange', path: '/transferencias' }, // <- Agregá esta línea
+  { id: 'transferencias', label: 'Transferencias', icon: 'fa-exchange', path: '/transferencias' },
+  { id: 'historial', label: 'Gastos por Usuarios', icon: 'fa-users', path: '/historial' },
+  { id: 'graficos', label: 'Gráficos', icon: 'fa-line-chart', path: '/graficos' },
 ];
 
 export const userLinks = [

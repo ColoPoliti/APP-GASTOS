@@ -66,24 +66,37 @@ export default function InvitarColaborador({ hogarId }) {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-xl font-bold dark:text-white text-indigo-600">Invitar colaborador</span>
+    <>
+      {/* Tarjeta compacta optimizada para celular y escritorio */}
+      <div className="flex items-center justify-between bg-white dark:bg-slate-900/40 border dark:border-slate-800  p-3.5 mb-4 backdrop-blur-sm shadow">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg">
+            <FaUserPlus size={18} />
+          </div>
+          <div className="mr-6">
+            <h4 className="text-sm font-semibold dark:text-white text-slate-800">Invitar colaborador</h4>
+            <p className="text-xs text-slate-400">Sumá a alguien a este bolsillo</p>
+          </div>
+        </div>
+        
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition shadow-lg shadow-cyan-900/20 cursor-pointer flex items-center gap-1.5"
+          title="Invitar colaborador"
+        >
+          <FaUserPlus size={12} />
+          <span>Invitar</span>
+        </button>
+      </div>
 
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="dark:bg-indigo-600/20 bg-indigo-600/20 border border-indigo-500/50 dark:border-indigo-500/50 dark:text-indigo-400 text-indigo-600 rounded-full hover:bg-indigo-600 hover:text-white p-3 font-bold transition-all flex items-center justify-center gap-2"
-        title="Invitar colaborador"
-      >
-        <FaUserPlus size={16} />
-      </button>
-
+      {/* Modal flotante (Mantiene exactamente la misma lógica funcional que tenías) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/80 bg-white/20  backdrop-blur-md p-4 overflow-y-auto">
-          <div className="w-full max-w-md dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200  rounded-2xl p-6 shadow relative my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/80 bg-black/40 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="w-full max-w-md dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200 rounded-2xl p-6 shadow-2xl relative my-auto">
             
             <button 
               onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <FaTimes size={18} />
             </button>
@@ -95,7 +108,7 @@ export default function InvitarColaborador({ hogarId }) {
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Correo electrónico</label>
                 <input 
                   type="email"
-                  className="w-full p-3 dark:bg-slate-950 bg-white text-white border border-slate-700 rounded-full focus:outline-none focus:border-indigo-500"
+                  className="w-full p-3 dark:bg-slate-950 bg-white dark:text-white text-slate-900 border border-slate-700 rounded-full focus:outline-none focus:border-indigo-500 text-sm"
                   placeholder="colaborador@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -107,14 +120,14 @@ export default function InvitarColaborador({ hogarId }) {
                 <button 
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="w-1/2 bg-slate-800 text-slate-300 p-3 rounded-lg font-bold hover:bg-slate-700 transition-colors"
+                  className="w-1/2 bg-slate-800 text-slate-300 p-3 rounded-lg font-bold hover:bg-slate-700 transition-colors cursor-pointer text-sm"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="w-1/2 bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
+                  className="w-1/2 bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50 cursor-pointer text-sm"
                 >
                   {loading ? 'Enviando...' : 'Enviar'}
                 </button>
@@ -123,6 +136,6 @@ export default function InvitarColaborador({ hogarId }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

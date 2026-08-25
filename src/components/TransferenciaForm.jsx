@@ -62,12 +62,12 @@ export default function TransferenciaForm({
     if (!monto || !recibidoPor) return;
 
     if (usuarioActual && String(recibidoPor).trim() === String(usuarioActual.id).trim()) {
-      alert("No te podés registrar una transferencia a vos mismo, amiguito.");
+      alert("No te podés registrar una transferencia a vos mismo.");
       return;
     }
 
     if (sesionId && String(recibidoPor).trim() === String(sesionId).trim()) {
-      alert("No te podés registrar una transferencia a vos mismo, amiguito.");
+      alert("No te podés registrar una transferencia a vos mismo.");
       return;
     }
 
@@ -119,8 +119,8 @@ export default function TransferenciaForm({
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex  items-end sm:items-center justify-center bg-white/20 dark:bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 border dark:border-slate-800 border-slate-200  rounded-t-2xl sm:rounded-2xl p-6 shadow relative animate-in fade-in zoom-in duration-200">
             
             <button
               type="button"
@@ -130,7 +130,7 @@ export default function TransferenciaForm({
               ✕
             </button>
 
-            <h3 className="text-base font-bold uppercase mb-4 text-white">
+            <h3 className="text-base font-bold uppercase mb-4 text-slate-950 dark:text-white">
               Registrar Transferencia
             </h3>
 
@@ -143,7 +143,7 @@ export default function TransferenciaForm({
                   required
                   value={recibidoPor}
                   onChange={(e) => setRecibidoPor(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full p-2.5 dark:text-white text-slate-800 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">Seleccionar destinatario...</option>
                   {otrosMiembros.map((miembro) => (
@@ -172,7 +172,7 @@ export default function TransferenciaForm({
                   placeholder="Ej: 15000"
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full p-2.5 dark:text-white text-slate-800 focus:outline-none focus:border-emerald-500"
                 />
               </div>
 

@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../ThemeToggle'; // Asegurate de importar la ruta correcta
 
 export default function Dropdown({ label, items, onSelect }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Hook para detectar clic afuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -34,21 +34,19 @@ export default function Dropdown({ label, items, onSelect }) {
         <div className="absolute right-1 z-10 mt-4 w-48 origin-top-right shadow dark:bg-slate-900 bg-white dark:border dark:border-slate-700 ring-1 ring-black ring-opacity-5 focus:outline-none animate-in fade-in zoom-in-95 duration-200 rounded-xl overflow-hidden">
           <div className="py-1">
             {items.map((item, index) => {
-              // Si el ítem tiene un path, usamos el componente Link de React Router
               if (item.path) {
                 return (
                   <Link
                     key={index}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:text-white hover:font-bold transition-colors text-left"
+                    className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950  hover:font-bold transition-colors text-left"
                   >
                     {item.label}
                   </Link>
                 );
               }
 
-              // Si no tiene path, mantenemos el comportamiento original con onSelect (ej: Cerrar Sesión)
               return (
                 <button
                   key={index}
@@ -56,12 +54,18 @@ export default function Dropdown({ label, items, onSelect }) {
                     if (onSelect) onSelect(item);
                     setIsOpen(false);
                   }}
-                  className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950 hover:bg-indigo-600 hover:text-white hover:font-bold transition-colors text-left cursor-pointer"
+                  className="block w-full px-4 py-2 text-sm dark:text-slate-300 text-slate-950  hover:text-slate-950  hover:font-bold transition-colors text-left cursor-pointer"
                 >
                   {item.label}
                 </button>
               );
             })}
+
+    
+            <div className="border-t dark:border-slate-800 border-slate-200 mt-1 pt-1">
+              <ThemeToggle asMenuItem={true} />
+            </div>
+
           </div>
         </div>
       )}

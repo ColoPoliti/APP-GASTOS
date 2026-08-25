@@ -136,7 +136,7 @@ export default function Graficos() {
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
             <div className="mb-8">
-                <h1 className="text-3xl font-black mb-1  mt-12 text-dark dark:text-slate-100">Mis Gráficos</h1>
+                <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">Mis Gráficos</h1>
                 <p className="text-slate-400 text-sm">Distribución de Gastos por Categoría</p>
             </div>
 

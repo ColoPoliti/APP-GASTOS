@@ -127,18 +127,18 @@ export default function NotificacionesDropdown() {
         <div className="relative inline-block text-left" ref={dropdownRef}>
             <button
                 onClick={abrirDropdown}
-                className="relative text-white hover:opacity-80 focus:outline-none"
+                className="relative text-white hover:opacity-80 focus:outline-none flex items-center justify-center p-1"
             >
                 <FaBell className="text-xl md:text-2xl" />
                 
                 {noLeidas && (
-                    <span className="absolute top-1 right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse border border-white"></span>
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-purple-800 rounded-full animate-pulse border border-white"></span>
                 )}
             </button>
 
             {mostrarDropdown && (
-                <div className="absolute right-0 mt-4 w-72 md:w-80 dark:bg-slate-900 bg-white dark:border dark:border-slate-700 border border-slate-300 shadow z-50 text-white">
-                    <div className="p-3 font-semibold border-b dark:border-slate-800 border-slate-300 dark:text-cyan-300 text-slate-500  text-sm">
+                <div className="fixed left-1/2 -translate-x-1/2 top-16 w-[90vw] max-w-[340px] sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-auto sm:mt-3 sm:w-80 dark:bg-slate-900 bg-white dark:border dark:border-slate-700 border border-slate-300 shadow-2xl z-50 text-white rounded-2xl overflow-hidden">
+                    <div className="p-3 font-semibold border-b dark:border-slate-800 border-slate-300 dark:text-cyan-300 text-slate-600 text-sm">
                         Notificaciones
                     </div>
                     <div className="max-h-64 overflow-y-auto">
@@ -154,7 +154,7 @@ export default function NotificacionesDropdown() {
                                         key={notif.id}
                                         onClick={() => esInvitacion && handleClicNotificacion(notif)}
                                         className={`p-3 text-xs md:text-sm border-b dark:border-slate-800 border-slate-300 transition-colors ${
-                                            !notif.leido ? 'bg-indigo-950/40 dark:text-slate-400 text-slate-950 ' : 'dark:text-slate-300  text-slate-950'
+                                            !notif.leido ? 'bg-indigo-950/40 dark:text-slate-400 text-slate-950 ' : 'dark:text-slate-300 text-slate-950'
                                         } ${esInvitacion ? 'cursor-pointer hover:bg-indigo-900/40 hover:text-white' : ''}`}
                                     >
                                         <p className="dark:text-white text-slate-800">{notif.mensaje}</p>

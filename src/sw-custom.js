@@ -1,4 +1,3 @@
-// src/sw-custom.js
 
 // Línea obligatoria para que Workbox / Vite PWA no tire error en el build de Vercel
 import { precacheAndRoute } from 'workbox-precaching';
@@ -13,10 +12,10 @@ self.addEventListener('push', function (event) {
   const title = data.title || 'GatillarApp 💸';
   const options = {
     body: data.body || 'Hay una nueva actividad en tu hogar.',
-    icon: '/pwa-192x192.png', // Asegurate de tener este ícono en tu carpeta public
+    icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
     data: {
-      url: data.url || '/' // A dónde redirigir al hacer clic en la notificación
+      url: data.url || '/'
     }
   };
 
@@ -31,17 +30,22 @@ self.addEventListener('notificationclick', function (event) {
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      // Si la app ya está abierta en una pestaña, la enfoca y la lleva a la URL
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url === event.notification.data.url && 'focus' in client) {
           return client.focus();
         }
       }
-      // Si no está abierta, abre una ventana nueva con la URL correspondiente
       if (clients.openWindow) {
         return clients.openWindow(event.notification.data.url);
       }
     })
   );
+});
+
+// Permite que el botón de actualizar fuerce el cambio de versión de inmediato
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

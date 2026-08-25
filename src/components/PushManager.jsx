@@ -20,10 +20,17 @@ export default function PushManager() {
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [dismissed, setDismissed] = useState(false); // Estado para ocultar el cartel si le da a la X
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
+    // Verificamos si el navegador soporta notificaciones y service workers
+    if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
+      // Si el usuario ya bloqueó las notificaciones a nivel navegador, ni molestamos en mostrar el cartel
+      if (Notification.permission === 'denied') {
+        setIsSupported(false);
+        return;
+      }
+
       setIsSupported(true);
       checkExistingSubscription();
     }
@@ -34,6 +41,11 @@ export default function PushManager() {
       const registration = await navigator.serviceWorker.ready;
       const existingSub = await registration.pushManager.getSubscription();
       setSubscription(existingSub);
+      
+      // Si ya tiene una suscripción activa, lo ocultamos
+      if (existingSub) {
+        setDismissed(true);
+      }
     } catch (error) {
       console.error('Error al chequear suscripción existente:', error);
     }
@@ -41,7 +53,7 @@ export default function PushManager() {
 
   async function subscribeUser() {
     if (!PUBLIC_VAPID_KEY || PUBLIC_VAPID_KEY === 'TU_CLAVE_PUBLICA_VAPID_AQUI') {
-      alert('¡Falta configurar la Clave Pública VAPID en el código, amiguito!');
+      alert('¡Falta configurar la Clave Pública VAPID en el código!');
       return;
     }
 
@@ -83,6 +95,8 @@ export default function PushManager() {
       }
 
       alert('¡Notificaciones activadas con éxito! 🎉');
+      setDismissed(true);
+
     } catch (error) {
       console.error('Error al intentar suscribir:', error);
       alert('Hubo un error al activar las notificaciones.');
@@ -91,17 +105,17 @@ export default function PushManager() {
     }
   }
 
-  // Si no está soportado, si ya está suscripto (y querés que no moleste), o si lo cerró con la X, no mostramos nada
-  if (!isSupported || dismissed) {
+  // Si no está soportado, si ya fue cerrado con la X, o si ya tiene suscripción, no se muestra
+  if (!isSupported || dismissed || subscription) {
     return null;
   }
 
   return (
-    <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-white max-w-sm shadow-xl relative">
+    <div className="p-4 dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-2xl bottom-0 left-0 m-4 text-white max-w-sm shadow fixed">
       {/* Botón de la X para cerrar */}
       <button 
         onClick={() => setDismissed(true)}
-        className="absolute top-3 right-3 text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition"
+        className="absolute top-3 right-3 text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
         title="Cerrar"
       >
         ✕
@@ -109,24 +123,18 @@ export default function PushManager() {
 
       <h3 className="font-bold text-sm mb-1 text-pink-500 pr-6">Notificaciones de GatillarApp 🏡</h3>
       
-      {subscription ? (
-        <p className="text-xs text-emerald-400 mt-2">
-          ✓ Este dispositivo está recibiendo alertas de gastos.
+      <div>
+        <p className="text-xs dark:text-slate-300 text-slate-950 mb-3 leading-relaxed">
+          Activá las alertas para enterarte al instante cuando alguien cargue un gasto en tu hogar.
         </p>
-      ) : (
-        <div>
-          <p className="text-xs text-slate-300 mb-3 leading-relaxed">
-            Activá las alertas para enterarte al instante cuando alguien cargue un gasto en tu hogar.
-          </p>
-          <button
-            onClick={subscribeUser}
-            disabled={loading}
-            className="w-full bg-pink-600 hover:bg-pink-500 active:scale-95 disabled:opacity-50 text-xs font-semibold py-2.5 px-3 rounded-xl transition shadow-lg shadow-pink-900/30"
-          >
-            {loading ? 'Activando...' : 'Activar Notificaciones Push'}
-          </button>
-        </div>
-      )}
+        <button
+          onClick={subscribeUser}
+          disabled={loading}
+          className="w-full bg-pink-600 hover:bg-pink-500 active:scale-95 disabled:opacity-50 text-xs font-semibold py-2.5 px-3 rounded-xl transition shadow-lg shadow-pink-900/30 cursor-pointer"
+        >
+          {loading ? 'Activando...' : 'Activar Notificaciones Push'}
+        </button>
+      </div>
     </div>
   );
 }

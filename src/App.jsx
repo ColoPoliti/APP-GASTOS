@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import PushManager from './components/PushManager';
+import ReloadPrompt from './components/ReloadPrompt';
 import Dashboard from './pages/DashboardRefact.jsx';
 import Login from './pages/Login';
 import Graficos from './pages/Graficos';
@@ -78,6 +79,7 @@ function AppContent() {
       </div>
 
       <CustomToaster />
+      <ReloadPrompt />
     </>
   );
 }

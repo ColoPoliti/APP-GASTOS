@@ -44,7 +44,7 @@ export default function PaginaTransferencias() {
         <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0 box-border overflow-x-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
                 <div className="w-full sm:w-auto flex-1 min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-black mb-1 mt-12 text-dark dark:text-slate-100 break-words">
+                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12  text-dark dark:text-slate-100 break-words">
                         Transferencias
                     </h1>
                     <p className="text-slate-400 text-sm break-words">

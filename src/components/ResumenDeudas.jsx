@@ -5,8 +5,10 @@ import { supabase } from '../supabaseClient';
 import { FaWhatsapp, FaExchangeAlt } from "react-icons/fa";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHandsClapping, faFaceSmileBeam, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { useUser } from '../context/UserContext';
 
 export default function ResumenDeudas({ gastos, transferencias, onNavegar }) {
+  const { nombreHogar, nombreUsuario } = useUser();
   const [perfiles, setPerfiles] = useState([]);
   const mensajesDeuda = calcularDeudas(gastos, transferencias);
 
@@ -22,25 +24,31 @@ export default function ResumenDeudas({ gastos, transferencias, onNavegar }) {
   }, []);
 
   const handleCobrarPorWhatsApp = (mensajeDeudaTexto) => {
-    const nombreDeudor = mensajeDeudaTexto.split(" ")[0].trim();
+    // 1. Desarmamos el texto que viene de la utilidad de deudas
+    const partes = mensajeDeudaTexto.split(" debe pagar ");
+    const deudor = partes[0]?.trim() || "";
+    const resto = partes[1]?.split(" a ") || ["", ""];
+    const monto = resto[0]?.trim() || "$0";
+    const acreedor = resto[1]?.trim() || "";
 
     console.log("Perfiles cargados en ResumenDeudas:", perfiles);
-    console.log("Buscando deudor:", nombreDeudor);
+    console.log("Buscando deudor:", deudor);
 
-    // Buscamos al usuario que coincida con el nombre
+    // 2. Buscamos al usuario que coincida con el nombre
     const deudorEncontrado = perfiles.find(p =>
-      p.nombre?.trim().toLowerCase() === nombreDeudor.toLowerCase() ||
-      p.email?.toLowerCase().includes(nombreDeudor.toLowerCase())
+      p.nombre?.trim().toLowerCase() === deudor.toLowerCase() ||
+      p.email?.toLowerCase().includes(deudor.toLowerCase())
     );
 
     const telefono = deudorEncontrado?.telefono;
 
     if (!telefono) {
-      alert(`No encontramos un celular registrado para "${nombreDeudor}". Verificá que la columna 'telefono' tenga datos en la tabla perfiles.`);
+      alert(`No encontramos un celular registrado para "${deudor}". Verificá que la columna 'telefono' tenga datos en la tabla perfiles.`);
       return;
     }
 
-    const mensaje = `Hola *${deudorEncontrado.nombre || nombreDeudor}*, ESTO ES UNA PRUEBA DE LA APPP-GASTOS, paso a recordarte: "${mensajeDeudaTexto}". ¡Cuando puedas avísame! 💸`;
+    // 3. Armamos el mensaje bien prolijo como querías
+    const mensaje = `Hola *${deudor}*, paso a recordarte que me debes pagar *${monto}* del hogar *${nombreHogar || 'Compartido'}*. ¡Cuando puedas avísame!`;
     const mensajeCodificado = encodeURIComponent(mensaje);
 
     window.open(`https://wa.me/${telefono}?text=${mensajeCodificado}`, '_blank');
@@ -97,18 +105,18 @@ export default function ResumenDeudas({ gastos, transferencias, onNavegar }) {
                         const acreedor = resto[1];
 
                         return (
-                          <div className="dark:bg-slate-900/80 bg-white shadow border dark:border-slate-800 border-slate-100 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl">
+                          <div className="dark:bg-slate-900/80 border-l-8 bg-white shadow border dark:border-slate-800 border-l-purple-600 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl">
 
                             {/* Info de Deudor / Acreedor */}
                             <div className="flex items-center space-x-3 overflow-hidden w-full sm:w-auto">
-                              <div className="w-10 h-10 rounded-full dark:bg-indigo-600/20 bg-indigo-600 border border-indigo-500/30 flex items-center justify-center dark:text-indigo-400 text-indigo-200 font-bold flex-shrink-0">
+                              <div className="w-10 h-10 rounded-full dark:bg-indigo-600/20 bg-indigo-600 border  uppercase border-indigo-500/30 flex items-center justify-center dark:text-indigo-400 text-indigo-200 font-bold flex-shrink-0">
                                 {deudor ? deudor.charAt(0) : "?"}
                               </div>
 
                               <div className="min-w-0">
                                 <p className="text-xs uppercase tracking-wider dark:text-slate-400 text-slate-500 font-semibold">Deuda pendiente</p>
                                 <p className="dark:text-slate-400 text-slate-950 font-medium text-sm sm:text-lg truncate">
-                                  <span className="font-bold dark:text-white text-slate-950">{deudor}</span> le debe a <span className="font-bold dark:text-white text-slate-950">{acreedor}</span>
+                                  <span className="font-bold dark:text-white text-slate-950 uppercase">{deudor}</span> le debe a <span className="font-bold dark:text-white text-slate-950">{acreedor}</span>
                                 </p>
                               </div>
                             </div>
@@ -134,13 +142,15 @@ export default function ResumenDeudas({ gastos, transferencias, onNavegar }) {
                               </div>
 
                               {/* Botón de WhatsApp */}
-                              <button
-                                onClick={() => handleCobrarPorWhatsApp(mensaje)}
-                                className="!bg-green-500 hover:!bg-emerald-500 active:!bg-green-700 text-white w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-emerald-900/30 hover:scale-105 flex-shrink-0 focus:outline-none focus:ring-0"
-                                title={`Cobrar a ${deudor} por WhatsApp`}
-                              >
-                                <FaWhatsapp className="w-5 h-5 text-white" />
-                              </button>
+                              {deudor.trim().toLowerCase() !== nombreUsuario?.trim().toLowerCase() && (
+                                <button
+                                  onClick={() => handleCobrarPorWhatsApp(mensaje)}
+                                  className="!bg-green-500 hover:!bg-emerald-500 active:!bg-green-700 text-white w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-emerald-900/30 hover:scale-105 flex-shrink-0 focus:outline-none focus:ring-0"
+                                  title={`Cobrar a ${deudor} por WhatsApp`}
+                                >
+                                  <FaWhatsapp className="w-5 h-5 text-white" />
+                                </button>
+                              )}
                             </div>
 
                           </div>
@@ -154,7 +164,7 @@ export default function ResumenDeudas({ gastos, transferencias, onNavegar }) {
               {/* Grilla de totales por usuario */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 {Object.entries(totalesPorUsuario).map(([nombre, total]) => (
-                  <div key={nombre} className="dark:bg-slate-950/60 bg-white border border-slate-800/80 p-3.5 flex flex-col justify-center relative rounded-xl">
+                  <div key={nombre} className="dark:bg-slate-950/60 bg-white border dark:border-slate-800/80 p-3.5 flex flex-col justify-center relative shadow rounded-xl">
                     <div className="flex items-center space-x-2 mb-1">
                       <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xs font-bold flex-shrink-0">
                         {nombre.charAt(0)}

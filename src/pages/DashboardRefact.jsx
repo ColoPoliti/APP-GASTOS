@@ -121,7 +121,7 @@ export default function Dashboard() {
 
  
     return (
-        <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors pt-16 duration-300 pb-20 relative">
+        <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors sm:pt-16 pt-8 duration-300 pb-20 relative">
 
             {invitacionPendiente && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
@@ -159,7 +159,7 @@ export default function Dashboard() {
                         <div className="mb-10">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                 <div>
-                                    <h1 className="text-3xl font-black mb-1 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
+                                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
                                     <p className="dark:text-slate-400 text-slate-950 text-sm">Estás gestionando el bolsillo: <span className="font-bold dark:text-cyan-400 text-purple-600">{nombreHogar}</span></p>
                                 </div>
 

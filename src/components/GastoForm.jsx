@@ -101,7 +101,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
                   placeholder="Ej: 5000"
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
-                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   autoFocus
                 />
               </div>
@@ -114,7 +114,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
                   placeholder="Ej: Supermercado"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
-                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -124,7 +124,7 @@ export default function GastoForm({ gastoEditando, categorias, onGuardar, onCanc
                   required
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value)}
-                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full dark:bg-slate-950 bg-white border border-slate-800 rounded-full px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                 >
                   <option value="">Seleccionar categoría...</option>
                   {categorias.map(cat => <option key={cat.id} value={cat.id}>{cat.nombre}</option>)}
