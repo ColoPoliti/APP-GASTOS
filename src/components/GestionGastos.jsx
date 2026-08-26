@@ -7,6 +7,7 @@ import TransferenciaForm from './TransferenciaForm';
 import { FaFolder, FaPen, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { obtenerEstiloCategoria } from "../utils/gastosUtils";
 import { useTheme } from '../context/ThemeContext.jsx';
+import toast from 'react-hot-toast';
 
 export default function GestionGastos({ hogarId, sesion }) {
     const { theme } = useTheme();
@@ -57,17 +58,69 @@ export default function GestionGastos({ hogarId, sesion }) {
     }, [hogarId]);
 
     const eliminarTransferencia = async (id) => {
-        if (!window.confirm("¿Seguro querés eliminar esta transferencia?")) return;
-        const { error } = await supabase.from('transferencias').delete().eq('id', id);
-        if (error) alert("Error al eliminar: " + error.message);
-        else traerTransferencias();
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="text-sm text-slate-200 font-medium">
+                    ¿Estás seguro de que querés eliminar esta transferencia?
+                </p>
+                <div className="flex gap-2 justify-end">
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors cursor-pointer"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            const { error } = await supabase.from('transferencias').delete().eq('id', id);
+                            if (error) {
+                                toast.error("Error al eliminar: " + error.message, { position: 'bottom-center' });
+                            } else {
+                                toast.success("Transferencia eliminada con éxito", { position: 'bottom-center' });
+                                traerTransferencias();
+                            }
+                        }}
+                        className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                        Sí, eliminar
+                    </button>
+                </div>
+            </div>
+        ), { duration: Infinity, position: 'bottom-center' });
     };
 
     const eliminarGasto = async (gasto) => {
-        if (!window.confirm("¿Seguro querés eliminar este gasto?")) return;
-        const { error } = await supabase.from('gastos').delete().eq('id', gasto.id);
-        if (error) alert("Error al eliminar: " + error.message);
-        else traerGastos();
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="text-sm dark:text-slate-950 text-white font-medium">
+                    ¿Estás seguro de que querés eliminar este gasto?
+                </p>
+                <div className="flex gap-2 justify-end">
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors cursor-pointer"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            const { error } = await supabase.from('gastos').delete().eq('id', gasto.id);
+                            if (error) {
+                                toast.error("Error al eliminar: " + error.message, { position: 'bottom-center' });
+                            } else {
+                                toast.success("Gasto eliminado con éxito", { position: 'bottom-center' });
+                                traerGastos();
+                            }
+                        }}
+                        className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                        Sí, eliminar
+                    </button>
+                </div>
+            </div>
+        ), { duration: Infinity, position: 'bottom-center' });
     };
 
     // 1. Filtramos por la solapa activa
@@ -135,12 +188,38 @@ export default function GestionGastos({ hogarId, sesion }) {
                             traerCategorias();
                             traerGastos();
                             setCategoriaEditando(null);
+                            toast.success("Categoría guardada con éxito", { position: 'bottom-center' });
                         }}
                         onCancelar={() => setCategoriaEditando(null)}
                         onEliminar={async (id) => {
-                            if (!window.confirm("¿Seguro querés eliminar esta categoría?")) return;
-                            await supabase.from('categorias').delete().eq('id', id);
-                            traerCategorias(); traerGastos(); setCategoriaEditando(null);
+                            toast((t) => (
+                                <div className="flex flex-col gap-3">
+                                    <p className="text-sm dark:text-slate-950 text-white font-medium">
+                                        ¿Estás seguro de que querés eliminar esta categoría?
+                                    </p>
+                                    <div className="flex gap-2 justify-end">
+                                        <button
+                                            onClick={() => toast.dismiss(t.id)}
+                                            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors cursor-pointer"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                toast.dismiss(t.id);
+                                                await supabase.from('categorias').delete().eq('id', id);
+                                                toast.success("Categoría eliminada", { position: 'bottom-center' });
+                                                traerCategorias(); 
+                                                traerGastos(); 
+                                                setCategoriaEditando(null);
+                                            }}
+                                            className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
+                                        >
+                                            Sí, eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ), { duration: Infinity, position: 'bottom-center' });
                         }}
                     />
                 </div>
@@ -151,7 +230,10 @@ export default function GestionGastos({ hogarId, sesion }) {
                         gastoEditando={gastoEditando}
                         hogarId={hogarId}
                         sesionId={sesion?.user?.id}
-                        onGuardar={() => { setGastoEditando(null); traerGastos(); }}
+                        onGuardar={() => { 
+                            setGastoEditando(null); 
+                            traerGastos(); 
+                        }}
                         onCancelar={() => setGastoEditando(null)}
                     />
                 </div>
@@ -196,7 +278,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                                     <button
                                         type="button"
                                         onClick={() => setCategoriaEditando(cat)}
-                                        className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-slate-400 hover:text-indigo-400"
+                                        className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-slate-400 hover:text-indigo-400 cursor-pointer"
                                     >
                                         <FaPen size={12} />
                                     </button>
@@ -227,7 +309,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                                 type="button"
                                 onClick={() => irACategoria(index)}
                                 aria-label={`Ir a categoría ${index + 1}`}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                                     categoriaActual === index ? 'w-5 bg-indigo-500' : 'w-1.5 bg-slate-600'
                                 }`}
                             />
@@ -242,7 +324,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                 <div className="flex gap-2 mb-4 overflow-x-auto pb-2 w-full max-w-full" style={{ scrollbarWidth: 'none' }}>
                     <button
                         onClick={() => cambiarTab('todos')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 cursor-pointer ${tabActiva === 'todos' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                     >
                         <span>Todos</span> 
                         <span className={`px-2 py-0.5 rounded-full text-xs ${tabActiva === 'todos' ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-300'}`}>
@@ -255,7 +337,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                             <button
                                 key={nombre}
                                 onClick={() => cambiarTab(nombre)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 cursor-pointer ${tabActiva === nombre ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
                             >
                                 <span>{nombre}</span> 
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${tabActiva === nombre ? 'bg-pink-600 text-white' : 'bg-pink-800/50 text-slate-300'}`}>
@@ -281,7 +363,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                     <button
                         onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
                         disabled={paginaSegura <= 1}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all cursor-pointer"
                     >
                         <FaChevronLeft size={10} /> Anterior
                     </button>
@@ -294,7 +376,7 @@ export default function GestionGastos({ hogarId, sesion }) {
                     <button
                         onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
                         disabled={paginaSegura >= totalPaginas}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg transition-all cursor-pointer"
                     >
                         Siguiente <FaChevronRight size={10} />
                     </button>

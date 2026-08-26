@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { ClipLoader } from 'react-spinners';
 import { obtenerEstiloCategoriaComun } from "../utils/gastosUtils";
 import { obtenerColorTextoIdeal } from '../utils/colorUtils';
-
+import { FaWallet } from "react-icons/fa";
 
 const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4'];
 
@@ -135,9 +135,25 @@ export default function Graficos() {
 
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0">
-            <div className="mb-8">
-                <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">Mis Gráficos</h1>
-                <p className="text-slate-400 text-sm">Distribución de Gastos por Categoría</p>
+            {/* Cabecera con Título y Total General Destacado */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">Mis Gráficos</h1>
+                    <p className="text-slate-400 text-sm">Distribución de Gastos por Categoría</p>
+                </div>
+
+                {/* Tarjeta del Total General */}
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 px-5 py-3 rounded-2xl shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center font-bold">
+                        <FaWallet size={18} />
+                    </div>
+                    <div>
+                        <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total General</span>
+                        <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                            ${totalGeneral.toLocaleString('es-AR')}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <hr className="border-slate-800 my-6" />
@@ -181,11 +197,7 @@ export default function Graficos() {
                         const porcentaje = totalGeneral > 0 ? ((item.value / totalGeneral) * 100).toFixed(1) : 0;
                         const isSelected = activeIndex === index;
 
-                        // Obtenemos los estilos adaptados a modo claro/oscuro con su color base y contraste
                         const estiloComun = obtenerEstiloCategoriaComun({ color: colorFinal }, theme);
-
-                        // Forzamos que en modo claro use la función de texto ideal para mejor visibilidad, 
-                        // y en modo oscuro mantenga el estilo dinámico optimizado.
                         const isDark = theme === 'dark' || (typeof window !== 'undefined' && localStorage.getItem('theme') === 'dark');
                         const textColorFinal = isDark ? estiloComun.color : obtenerColorTextoIdeal(colorFinal);
 
@@ -201,7 +213,6 @@ export default function Graficos() {
                                     borderColor: isSelected ? colorFinal : undefined
                                 }}
                             >
-                                {/* Bloque izquierdo aplicando el estilo unificado */}
                                 <span
                                     className="absolute inset-y-0 left-0 px-3.5 flex items-center justify-center text-[16px] font-bold shadow-sm"
                                     style={{
@@ -213,14 +224,12 @@ export default function Graficos() {
                                     ({porcentaje}%)
                                 </span>
 
-                                {/* Nombre de la categoría */}
                                 <div className="ml-24 flex items-center">
                                     <span className="text-sm font-bold dark:text-white text-slate-950">
                                         {item.name}
                                     </span>
                                 </div>
 
-                                {/* Monto a la derecha */}
                                 <div className="text-right">
                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-200">
                                         ${item.value.toLocaleString('es-AR')}

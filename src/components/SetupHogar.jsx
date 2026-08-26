@@ -10,6 +10,9 @@ export default function SetupHogar({ userId, onHogarSet }) {
   const [loading, setLoading] = useState(false);
   const [misHogares, setMisHogares] = useState([]);
   const [existe, setExiste] = useState(null);
+  
+  // Nuevo estado para la opción de importar categorías
+  const [hogarOrigenCategorias, setHogarOrigenCategorias] = useState('');
 
   // 1. Verificar si el hogar existe al escribir manualmente
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
     fetchMisHogares();
   }, [userId]);
 
-  // 3. Crear Hogar
+  // 3. Crear Hogar e importar categorías si seleccionó una procedencia
   const handleCrearHogar = async (nombreHogar) => {
     setLoading(true);
     try {
@@ -78,6 +81,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
       const codigoHogar = nombreHogar.toUpperCase();
 
+      // Creamos el nuevo hogar
       const { data: nuevoHogar, error } = await supabase
         .from('hogares')
         .insert([{ codigo: codigoHogar, creador_id: user.id }])
@@ -85,6 +89,31 @@ export default function SetupHogar({ userId, onHogarSet }) {
         .single();
 
       if (error) throw error;
+
+      // Si el usuario eligió un hogar para importar categorías
+      if (hogarOrigenCategorias) {
+        // Traemos las categorías del hogar viejo
+        const { data: categoriasViejas, error: errCatFetch } = await supabase
+          .from('categorias')
+          .select('nombre, color')
+          .eq('hogar_id', hogarOrigenCategorias);
+
+        if (!errCatFetch && categoriasViejas && categoriasViejas.length > 0) {
+          // Preparamos el array para el nuevo hogar (le inyectamos el nuevo id y sacamos los ids viejos)
+          const categoriasNuevas = categoriasViejas.map(cat => ({
+            nombre: cat.nombre,
+            color: cat.color || '#6366f1',
+            hogar_id: nuevoHogar.id
+          }));
+
+          // Las insertamos de una sola vez
+          const { error: errCatInsert } = await supabase
+            .from('categorias')
+            .insert(categoriasNuevas);
+
+          if (errCatInsert) console.error("Error al clonar categorías:", errCatInsert);
+        }
+      }
 
       await supabase
         .from('perfiles')
@@ -95,6 +124,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
       setMisHogares(prev => [...prev, nuevoHogar]); 
       setTempHogar(''); 
+      setHogarOrigenCategorias('');
       if (onHogarSet) onHogarSet(nuevoHogar.id, codigoHogar);
       
       toast.success("¡Bolsillo creado correctamente!");
@@ -249,7 +279,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
         <p className="dark:text-slate-400 mb-6 text-sm">Seleccioná o creá tu Bolsillo para continuar:</p>
         
         <input 
-          className="w-full p-3 mb-4 bg-white  dark:bg-slate-950 dark:text-white text-slate-950 font-semibold border border-slate-700 rounded-full uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition-colors" 
+          className="w-full p-3 mb-4 bg-white dark:bg-slate-950 dark:text-white text-slate-950 font-semibold border border-slate-700 rounded-full uppercase tracking-wider focus:outline-none focus:border-indigo-500 transition-colors" 
           placeholder="Código de Bolsillo" 
           value={tempHogar} 
           onChange={(e) => setTempHogar(e.target.value.toUpperCase())} 
@@ -275,7 +305,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
         {tempHogar.length >= 3 && (
           <div className="mb-5 text-sm">
             {existe ? (
-              <div className="p-3 dark:bg-emerald-950/40 bg-emerald-500 border border-emerald-600/50 rounded-lg dark:text-emerald-400  text-emerald-900 font-bold flex items-center justify-center gap-2">
+              <div className="p-3 dark:bg-emerald-950/40 bg-emerald-500 border border-emerald-600/50 rounded-lg dark:text-emerald-400 text-emerald-900 font-bold flex items-center justify-center gap-2">
                 <i className="fa fa-check-circle text-base"></i> ¡El Bolsillo existe! Podés unirte.
               </div>
             ) : (
@@ -283,6 +313,27 @@ export default function SetupHogar({ userId, onHogarSet }) {
                 <i className="fa fa-exclamation-triangle text-base"></i> El Bolsillo no existe. Podés crearlo.
               </div>
             )}
+          </div>
+        )}
+
+        {/* SI EL HOGAR NO EXISTE (SE VA A CREAR), MOSTRAMOS LA OPCIÓN DE IMPORTAR CATEGORÍAS */}
+        {tempHogar.length >= 3 && !existe && misHogares.length > 0 && (
+          <div className="mb-4 text-left">
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
+              Importar categorías desde (opcional):
+            </label>
+            <select
+              value={hogarOrigenCategorias}
+              onChange={(e) => setHogarOrigenCategorias(e.target.value)}
+              className="w-full p-2.5 bg-white dark:bg-slate-950 dark:text-white text-slate-950 border border-slate-700 rounded-lg text-xs font-medium focus:outline-none focus:border-indigo-500"
+            >
+              <option value="">No importar (empezar de cero)</option>
+              {misHogares.map((h) => (
+                <option key={h.id} value={h.id}>
+                  Bolsillo: {h.codigo}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 

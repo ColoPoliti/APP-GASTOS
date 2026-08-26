@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { useUser } from '../context/UserContext';
 import { FaUserPlus, FaTimes } from "react-icons/fa";
 import toast from 'react-hot-toast';
 
 export default function InvitarColaborador({ hogarId }) {
+  const { sesion } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,17 +13,45 @@ export default function InvitarColaborador({ hogarId }) {
   const handleInvitar = async (e) => {
     e.preventDefault();
     if (!email) return;
+
+    const emailIngresado = email.trim().toLowerCase();
+    const emailActual = sesion?.user?.email?.trim()?.toLowerCase();
+
+    // 1. Validamos que no se invite a sí mismo
+    if (emailActual && emailIngresado === emailActual) {
+      toast.error("No podés invitarte a tu propio bolsillo, crack.", { position: 'bottom-center' });
+      return;
+    }
     
     setLoading(true);
 
     try {
-      // 1. Insertamos la invitación y traemos su ID con .select().single()
+      // 2. Verificamos si ya existe un perfil con ese email y si ya pertenece a este hogar
+      const { data: perfilExistente, error: errorPerfilCheck } = await supabase
+        .from('perfiles')
+        .select('id, hogar_id')
+        .eq('email', emailIngresado)
+        .maybeSingle();
+
+      if (errorPerfilCheck) throw errorPerfilCheck;
+
+      // Si el usuario ya está registrado y su hogar_id coincide con el actual
+      if (perfilExistente && perfilExistente.hogar_id === hogarId) {
+        toast("⚠️ El usuario ya pertenece a este bolsillo.", { 
+          position: 'bottom-center',
+          style: { background: '#334155', color: '#fff' }
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 3. Insertamos la invitación si pasó las validaciones
       const { data: invData, error: invError } = await supabase
         .from('invitaciones')
         .insert([
           { 
             hogar_id: hogarId, 
-            email_invitado: email.toLowerCase(),
+            email_invitado: emailIngresado,
             estado: 'pendiente' 
           }
         ])
@@ -30,15 +60,8 @@ export default function InvitarColaborador({ hogarId }) {
 
       if (invError) throw invError;
 
-      // 2. Buscamos si el usuario ya tiene perfil registrado en la app
-      const { data: perfilData } = await supabase
-        .from('perfiles')
-        .select('id')
-        .eq('email', email.toLowerCase())
-        .single();
-
-      // 3. Si el usuario existe, le generamos su notificación con el enlace vinculado
-      if (perfilData) {
+      // 4. Si el usuario existe pero está en otro hogar (o sin hogar), le generamos su notificación
+      if (perfilExistente) {
         const { data: hogarData } = await supabase
           .from('hogares')
           .select('codigo')
@@ -48,9 +71,9 @@ export default function InvitarColaborador({ hogarId }) {
         await supabase
           .from('notificaciones')
           .insert({
-            usuario_id: perfilData.id,
+            usuario_id: perfilExistente.id,
             mensaje: `Te invitaron al bolsillo: ${hogarData?.codigo || 'Bolsillo'}`,
-            invitacion_id: invData.id // ¡Acá va el link clave!
+            invitacion_id: invData.id
           });
       }
 
@@ -89,7 +112,7 @@ export default function InvitarColaborador({ hogarId }) {
         </button>
       </div>
 
-      {/* Modal flotante (Mantiene exactamente la misma lógica funcional que tenías) */}
+      {/* Modal flotante */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-black/80 bg-black/40 backdrop-blur-md p-4 overflow-y-auto">
           <div className="w-full max-w-md dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200 rounded-2xl p-6 shadow-2xl relative my-auto">

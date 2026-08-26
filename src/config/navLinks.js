@@ -4,6 +4,7 @@ export const navLinks = [
   { id: 'transferencias', label: 'Transferencias', icon: 'fa-exchange', path: '/transferencias' },
   { id: 'historial', label: 'Gastos por Usuarios', icon: 'fa-users', path: '/historial' },
   { id: 'graficos', label: 'Gráficos', icon: 'fa-line-chart', path: '/graficos' },
+  { id: 'finanzas', label: 'Mis Finanzas', icon: 'fa-piggy-bank', path: '/finanzas' },
 ];
 
 export const userLinks = [

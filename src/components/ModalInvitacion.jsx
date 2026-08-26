@@ -1,13 +1,21 @@
+import React from 'react';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 
 export default function ModalInvitacion({ invitacion, onClose, onAceptada }) {
-  const { user, actualizarHogar } = useUser();
+  // Usamos 'sesion' que es como lo manejas en el resto de tus componentes
+  const { sesion, actualizarHogar } = useUser();
 
   if (!invitacion) return null;
 
   const aceptarInvitacion = async () => {
     try {
+      const userId = sesion?.user?.id;
+      if (!userId) {
+        alert("No se encontró una sesión activa.");
+        return;
+      }
+
       // 1. Actualizamos el estado de la invitación a 'aceptada'
       const { error: errorInv } = await supabase
         .from('invitaciones')
@@ -16,24 +24,23 @@ export default function ModalInvitacion({ invitacion, onClose, onAceptada }) {
 
       if (errorInv) throw errorInv;
 
-      // 2. Actualizamos el perfil del usuario actual para asociarlo al nuevo hogar_id
-      if (user?.id && invitacion.hogar_id) {
-        const { error: errorPerfil } = await supabase
-          .from('perfiles')
-          .update({ hogar_id: invitacion.hogar_id })
-          .eq('id', user.id);
+      // 2. Actualizamos el perfil del usuario actual para asociarlo al nuevo hogar_id usando el userId correcto
+      const { error: errorPerfil } = await supabase
+        .from('perfiles')
+        .update({ hogar_id: invitacion.hogar_id })
+        .eq('id', userId);
 
-        if (errorPerfil) throw errorPerfil;
+      if (errorPerfil) throw errorPerfil;
 
-        // 3. Actualizamos el contexto y localStorage localmente
-        actualizarHogar(invitacion.hogar_id, invitacion.hogar_nombre || invitacion.hogares?.codigo);
-      }
+      // 3. Actualizamos el contexto y localStorage localmente
+      actualizarHogar(invitacion.hogar_id, invitacion.hogar_nombre || invitacion.hogares?.codigo);
 
       if (onAceptada) onAceptada();
       window.location.reload();
       
     } catch (err) {
       console.error("Error al aceptar la invitación:", err);
+      alert("Hubo un error al aceptar la invitación.");
     }
   };
 

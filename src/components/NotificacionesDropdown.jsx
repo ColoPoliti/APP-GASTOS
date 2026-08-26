@@ -34,7 +34,10 @@ export default function NotificacionesDropdown() {
             try {
                 const { data, error } = await supabase
                     .from('notificaciones')
-                    .select('*')
+                    .select(`
+                        *,
+                        perfiles:usuario_id (nombre)
+                    `)
                     .eq('usuario_id', userId)
                     .order('created_at', { ascending: false })
                     .limit(10);
@@ -52,7 +55,8 @@ export default function NotificacionesDropdown() {
 
         cargarNotificaciones();
 
-        const canal = supabase
+        // Canal 1: Escucha nuevas notificaciones en tiempo real
+        const canalNotis = supabase
             .channel(`public:notificaciones:usuario_id=eq.${userId}`)
             .on(
                 'postgres_changes',
@@ -62,10 +66,29 @@ export default function NotificacionesDropdown() {
                     table: 'notificaciones',
                     filter: `usuario_id=eq.${userId}`,
                 },
-                (payload) => {
+                () => {
                     if (isMounted) {
-                        setNotificaciones((prev) => [payload.new, ...prev]);
+                        cargarNotificaciones();
                         setNoLeidas(true);
+                    }
+                }
+            )
+            .subscribe();
+
+        // Canal 2: Escucha cuando el usuario actualiza su perfil
+        const canalPerfiles = supabase
+            .channel(`public:perfiles:id=eq.${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'perfiles',
+                    filter: `id=eq.${userId}`,
+                },
+                () => {
+                    if (isMounted) {
+                        cargarNotificaciones();
                     }
                 }
             )
@@ -73,7 +96,8 @@ export default function NotificacionesDropdown() {
 
         return () => {
             isMounted = false;
-            supabase.removeChannel(canal);
+            supabase.removeChannel(canalNotis);
+            supabase.removeChannel(canalPerfiles);
         };
     }, [sesion?.user?.id]);
 
@@ -83,7 +107,6 @@ export default function NotificacionesDropdown() {
 
         setNoLeidas(false);
         
-        // Actualizar el estado visual al instante
         setNotificaciones(prev => 
             prev.map(n => ({ ...n, leido: true }))
         );
@@ -149,6 +172,8 @@ export default function NotificacionesDropdown() {
                         ) : (
                             notificaciones.map((notif) => {
                                 const esInvitacion = !!notif.invitacion_id;
+                                const textoFinal = notif.mensaje;
+
                                 return (
                                     <div
                                         key={notif.id}
@@ -157,7 +182,10 @@ export default function NotificacionesDropdown() {
                                             !notif.leido ? 'bg-indigo-950/40 dark:text-slate-400 text-slate-950 ' : 'dark:text-slate-300 text-slate-950'
                                         } ${esInvitacion ? 'cursor-pointer hover:bg-indigo-900/40 hover:text-white' : ''}`}
                                     >
-                                        <p className="dark:text-white text-slate-800">{notif.mensaje}</p>
+                                        <p className="dark:text-white text-slate-800">
+                                            {textoFinal}
+                                        </p>
+
                                         {esInvitacion && (
                                             <span className="text-[11px] text-indigo-400 font-semibold mt-1 block underline">
                                                 👉 Gestionar invitación

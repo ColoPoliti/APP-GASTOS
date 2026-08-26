@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt, faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
+import toast from 'react-hot-toast';
 
 export default function ListaTransferencias({ transferencias = [], miembros = [], sesionId, onTransferenciaEliminada }) {
     const [cargandoId, setCargandoId] = useState(null);
@@ -12,11 +13,37 @@ export default function ListaTransferencias({ transferencias = [], miembros = []
         return miembro ? (miembro.nombre || miembro.email) : 'Usuario desconocido';
     };
 
-    const handleEliminar = async (transferenciaId) => {
-        if (!window.confirm("¿Estás seguro de que querés eliminar esta transferencia? Esto afectará el cálculo de las deudas.")) {
-            return;
-        }
+    const handleEliminar = (transferenciaId) => {
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="text-sm dark:bg-white text-white  dark:text-slate-950 font-medium">
+                    ¿Estás seguro de que querés eliminar esta transferencia? 
+                </p>
+                <div className="flex gap-2 justify-end">
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors cursor-pointer"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            await ejecutarEliminacion(transferenciaId);
+                        }}
+                        className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                        Sí, eliminar
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: Infinity, // Se queda abierto hasta que elijas una opción
+            position: 'bottom-center'
+        });
+    };
 
+    const ejecutarEliminacion = async (transferenciaId) => {
         setCargandoId(transferenciaId);
         try {
             const { error } = await supabase
@@ -26,12 +53,14 @@ export default function ListaTransferencias({ transferencias = [], miembros = []
 
             if (error) throw error;
 
+            toast.success("¡Transferencia eliminada con éxito!", { position: 'bottom-center' });
+
             if (onTransferenciaEliminada) {
                 onTransferenciaEliminada();
             }
         } catch (error) {
             console.error("Error al eliminar la transferencia:", error);
-            alert("No se pudo eliminar la transferencia: " + error.message);
+            toast.error("No se pudo eliminar la transferencia: " + error.message, { position: 'bottom-center' });
         } finally {
             setCargandoId(null);
         }
@@ -61,7 +90,6 @@ export default function ListaTransferencias({ transferencias = [], miembros = []
                         year: 'numeric'
                     });
 
-                    // Permitir borrar si es el que envió la transferencia o si querés dar libertad a cualquiera del hogar
                     const puedeBorrar = t.enviado_por === sesionId;
 
                     return (
@@ -95,7 +123,7 @@ export default function ListaTransferencias({ transferencias = [], miembros = []
                                     <button
                                         onClick={() => handleEliminar(t.id)}
                                         disabled={cargandoId === t.id}
-                                        className="text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                                        className="text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
                                         title="Eliminar transferencia"
                                     >
                                         <FontAwesomeIcon icon={faTrashAlt} />

@@ -5,6 +5,7 @@ import ReloadPrompt from './components/ReloadPrompt';
 import Dashboard from './pages/DashboardRefact.jsx';
 import Login from './pages/Login';
 import Graficos from './pages/Graficos';
+import MisFinanzas from './components/MisFinanzas'; // Ajustá la ruta si lo guardaste en components/
 import ThemeToggle from './ThemeToggle';
 import Layout from './components/Layout';
 import { UserProvider, useUser } from './context/UserContext.jsx';
@@ -64,6 +65,7 @@ function AppContent() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/graficos" element={<Graficos />} />
+              <Route path="/finanzas" element={<MisFinanzas />} />
               <Route path="/historial" element={<PaginaHistorial />} />
               <Route path="/gestion-gastos" element={<PaginaGestionGastos />} />
               <Route path="/transferencias" element={<PaginaTransferencias />} />

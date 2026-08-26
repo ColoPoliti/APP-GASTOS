@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { GiTakeMyMoney } from "react-icons/gi";
+import toast from 'react-hot-toast';
 
 export default function TransferenciaForm({
   hogarId,
@@ -62,12 +63,12 @@ export default function TransferenciaForm({
     if (!monto || !recibidoPor) return;
 
     if (usuarioActual && String(recibidoPor).trim() === String(usuarioActual.id).trim()) {
-      alert("No te podés registrar una transferencia a vos mismo.");
+      toast.error("No te podés registrar una transferencia a vos mismo.", { position: 'bottom-center' });
       return;
     }
 
     if (sesionId && String(recibidoPor).trim() === String(sesionId).trim()) {
-      alert("No te podés registrar una transferencia a vos mismo.");
+      toast.error("No te podés registrar una transferencia a vos mismo.", { position: 'bottom-center' });
       return;
     }
 
@@ -76,7 +77,7 @@ export default function TransferenciaForm({
     );
 
     if (!destinatarioValido) {
-      alert("El destinatario seleccionado no pertenece a este hogar.");
+      toast.error("El destinatario seleccionado no pertenece a este hogar.", { position: 'bottom-center' });
       return;
     }
 
@@ -94,6 +95,8 @@ export default function TransferenciaForm({
       const { error } = await supabase.from('transferencias').insert([payload]);
       if (error) throw error;
 
+      toast.success("¡Transferencia registrada con éxito!", { position: 'bottom-center' });
+
       setMonto('');
       setRecibidoPor('');
       setIsOpen(false);
@@ -101,7 +104,7 @@ export default function TransferenciaForm({
       if (onGuardar) onGuardar();
     } catch (error) {
       console.error("Error al registrar la transferencia:", error);
-      alert("Hubo un error al registrar la transferencia: " + error.message);
+      toast.error("Hubo un error al registrar la transferencia: " + error.message, { position: 'bottom-center' });
     } finally {
       setCargando(false);
     }
@@ -112,20 +115,20 @@ export default function TransferenciaForm({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer"
       >
         <span><GiTakeMyMoney /></span>
         Registrar Transferencia
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex  items-end sm:items-center justify-center bg-white/20 dark:bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 border dark:border-slate-800 border-slate-200  rounded-t-2xl sm:rounded-2xl p-6 shadow relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-white/20 dark:bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 border dark:border-slate-800 border-slate-200 rounded-t-2xl sm:rounded-2xl p-6 shadow relative animate-in fade-in zoom-in duration-200">
             
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold z-10"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors text-lg font-bold z-10 cursor-pointer"
             >
               ✕
             </button>
@@ -184,7 +187,7 @@ export default function TransferenciaForm({
                 <button
                   disabled={cargando || otrosMiembros.length === 0}
                   type="submit"
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-emerald-600/30"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg py-3 font-bold transition text-white shadow-lg shadow-emerald-600/30 cursor-pointer"
                 >
                   {cargando ? 'Guardando...' : 'Confirmar Transferencia'}
                 </button>
@@ -192,7 +195,7 @@ export default function TransferenciaForm({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold"
+                  className="px-4 py-3 bg-slate-800 text-slate-300 hover:text-white rounded-lg transition font-bold cursor-pointer"
                 >
                   Cancelar
                 </button>
