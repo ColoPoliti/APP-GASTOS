@@ -4,14 +4,39 @@ import { useUser } from "../context/UserContext.jsx";
 import { supabase } from '../supabaseClient';
 import Dropdown from './Dropdown.jsx';
 import NotificacionesDropdown from './NotificacionesDropdown';
-import { FaEllipsisV } from "react-icons/fa";
+import { FaEllipsisV, FaCrown } from "react-icons/fa";
 import { GiTakeMyMoney } from "react-icons/gi";
 
 const Navbar = () => {
     const { nombreHogar, nombreUsuario, hogarId, sesion, actualizarHogar } = useUser();
+    const [esCreador, setEsCreador] = useState(false);
     
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallButton, setShowInstallButton] = useState(false);
+
+    // Verificar si el usuario actual es el creador del hogar activo
+    useEffect(() => {
+        const verificarCreador = async () => {
+            if (!hogarId || !sesion?.user?.id) {
+                setEsCreador(false);
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('hogares')
+                .select('creador_id')
+                .eq('id', hogarId)
+                .single();
+
+            if (!error && data) {
+                setEsCreador(data.creador_id === sesion.user.id);
+            } else {
+                setEsCreador(false);
+            }
+        };
+
+        verificarCreador();
+    }, [hogarId, sesion]);
 
     useEffect(() => {
         const handler = (e) => {
@@ -75,8 +100,19 @@ const Navbar = () => {
                     </button>
                 )}
 
-                <p className="bg-slate-900 text-white px-3 py-1.5 rounded-full hidden sm:flex items-center gap-1 shadow-sm">
-                    <span>Bolsillo:</span> {nombreHogar ? <span className="font-bold text-cyan-400">{nombreHogar}</span> : 'Ninguno'}
+                <p className="bg-slate-900 text-white px-3.5 py-1.5 rounded-full hidden sm:flex items-center gap-1.5 shadow-sm">
+                    <span>Bolsillo:</span> 
+                    {nombreHogar ? (
+                        <span className="font-bold text-cyan-400 flex items-center gap-1.5">
+                            {nombreHogar}
+                            {esCreador && (
+                                <span title="Sos el creador de este Bolsillo" className="inline-flex items-center bg-amber-500 text-slate-950 p-1 rounded-full shadow-sm">
+                                    <FaCrown size={10} className="fill-current" />
+                                </span>
+                            )}
+                        </span>
+                    ) : 'Ninguno'}
+                    
                     {hogarId && (
                         <button 
                             onClick={handleCambiarHogar} 
@@ -86,7 +122,7 @@ const Navbar = () => {
                         </button>
                     )}
                 </p>
-                <p className="font-bold text-white hidden  sm:block">{nombreUsuario}</p>
+                <p className="font-bold text-white hidden sm:block">{nombreUsuario}</p>
     
                 {/* COMPONENTE DE NOTIFICACIONES */}
                 <NotificacionesDropdown />

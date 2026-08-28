@@ -5,7 +5,11 @@ import ModalInvitacion from './ModalInvitacion';
 import { FaBell } from "react-icons/fa";
 
 export default function NotificacionesDropdown() {
-    const { sesion } = useUser();
+    const userContext = useUser(); 
+    
+    // Blindaje total: capturamos el ID sin importar cómo se llame en tu Contexto
+    const userId = userContext?.user?.id || userContext?.sesion?.user?.id || userContext?.usuario?.id || userContext?.id;
+
     const [notificaciones, setNotificaciones] = useState([]);
     const [noLeidas, setNoLeidas] = useState(false);
     const [mostrarDropdown, setMostrarDropdown] = useState(false);
@@ -26,7 +30,6 @@ export default function NotificacionesDropdown() {
 
     useEffect(() => {
         let isMounted = true;
-        const userId = sesion?.user?.id;
         
         if (!userId) return;
 
@@ -34,10 +37,7 @@ export default function NotificacionesDropdown() {
             try {
                 const { data, error } = await supabase
                     .from('notificaciones')
-                    .select(`
-                        *,
-                        perfiles:usuario_id (nombre)
-                    `)
+                    .select('*')
                     .eq('usuario_id', userId)
                     .order('created_at', { ascending: false })
                     .limit(10);
@@ -55,9 +55,8 @@ export default function NotificacionesDropdown() {
 
         cargarNotificaciones();
 
-        // Canal 1: Escucha nuevas notificaciones en tiempo real
-        const canalNotis = supabase
-            .channel(`public:notificaciones:usuario_id=eq.${userId}`)
+        const canalUnificado = supabase
+            .channel(`notificaciones_usuario_${userId}`)
             .on(
                 'postgres_changes',
                 {
@@ -75,47 +74,25 @@ export default function NotificacionesDropdown() {
             )
             .subscribe();
 
-        // Canal 2: Escucha cuando el usuario actualiza su perfil
-        const canalPerfiles = supabase
-            .channel(`public:perfiles:id=eq.${userId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'perfiles',
-                    filter: `id=eq.${userId}`,
-                },
-                () => {
-                    if (isMounted) {
-                        cargarNotificaciones();
-                    }
-                }
-            )
-            .subscribe();
-
         return () => {
             isMounted = false;
-            supabase.removeChannel(canalNotis);
-            supabase.removeChannel(canalPerfiles);
+            supabase.removeChannel(canalUnificado);
         };
-    }, [sesion?.user?.id]);
+    }, [userId]);
 
     const abrirDropdown = async () => {
-        setMostrarDropdown(!mostrarDropdown);
-        if (!noLeidas || !sesion?.user?.id) return;
+        setMostrarDropdown(prev => !prev);
+        
+        if (!noLeidas || !userId) return;
 
         setNoLeidas(false);
-        
-        setNotificaciones(prev => 
-            prev.map(n => ({ ...n, leido: true }))
-        );
+        setNotificaciones(prev => prev.map(n => ({ ...n, leido: true })));
 
         try {
             await supabase
                 .from('notificaciones')
                 .update({ leido: true })
-                .eq('usuario_id', sesion.user.id)
+                .eq('usuario_id', userId)
                 .eq('leido', false);
         } catch (err) {
             console.error("Error al marcar leídas:", err);

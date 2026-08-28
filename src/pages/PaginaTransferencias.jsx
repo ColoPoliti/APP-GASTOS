@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 import ListaTransferencias from '../components/ListaTransferencias';
 import TransferenciaForm from '../components/TransferenciaForm';
+import { HashLoader } from 'react-spinners';
 
 export default function PaginaTransferencias() {
     const { hogarId, sesion } = useUser();
@@ -40,11 +41,23 @@ export default function PaginaTransferencias() {
         cargarDatos();
     }, [hogarId]);
 
+    if (cargando) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const colorLoader = isDark ? '#ffffff' : '#4f46e5';
+
+        return (
+            <div className="fixed inset-0 z-50 flex flex-col text-slate-950 dark:text-white items-center justify-center dark:bg-slate-950 bg-slate-50 transition-colors duration-300 gap-4">
+                <HashLoader color={colorLoader} size={60} />
+                <span className="text-sm font-semibold tracking-wide">Cargando transferencias...</span>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:p-6 my-6 text-xs outline-none focus:outline-none focus:ring-0 box-border overflow-x-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
                 <div className="w-full sm:w-auto flex-1 min-w-0">
-                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12  text-dark dark:text-slate-100 break-words">
+                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100 break-words">
                         Transferencias
                     </h1>
                     <p className="text-slate-400 text-sm break-words">
@@ -64,18 +77,14 @@ export default function PaginaTransferencias() {
 
             <hr className="border-slate-800 my-6 w-full" />
 
-            {cargando ? (
-                <p className="text-slate-400 text-center py-8">Cargando transferencias...</p>
-            ) : (
-                <div className="w-full overflow-x-auto max-w-full">
-                    <ListaTransferencias 
-                        transferencias={transferencias}
-                        miembros={miembros}
-                        sesionId={sesion?.user?.id}
-                        onTransferenciaEliminada={cargarDatos}
-                    />
-                </div>
-            )}
+            <div className="w-full overflow-x-auto max-w-full">
+                <ListaTransferencias 
+                    transferencias={transferencias}
+                    miembros={miembros}
+                    sesionId={sesion?.user?.id}
+                    onTransferenciaEliminada={cargarDatos}
+                />
+            </div>
         </div>
     );
 }

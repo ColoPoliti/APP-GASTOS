@@ -3,7 +3,7 @@ import { PieChart, Pie, Sector, Cell, Tooltip, ResponsiveContainer } from 'recha
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
-import { ClipLoader } from 'react-spinners';
+import { HashLoader } from 'react-spinners';
 import { obtenerEstiloCategoriaComun } from "../utils/gastosUtils";
 import { obtenerColorTextoIdeal } from '../utils/colorUtils';
 import { FaWallet } from "react-icons/fa";
@@ -96,13 +96,17 @@ export default function Graficos() {
         fetchGastosGrafico();
     }, [hogarId]);
 
-    if (loading) {
+      if (loading) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const colorLoader = isDark ? '#ffffff' : '#4f46e5';
+
         return (
-            <div className="flex justify-center items-center h-64">
-                <ClipLoader color="#ffffff" size={40} />
+            <div className="fixed inset-0 z-50 flex flex-col text-slate-950 dark:text-white items-center justify-center dark:bg-slate-950 bg-slate-50 transition-colors duration-300 gap-4">
+                <HashLoader color={colorLoader} size={60} />Cargando tus datos...  
             </div>
         );
     }
+
 
     if (!gastos || gastos.length === 0) {
         return <div className="text-center p-8 text-slate-400">No hay gastos cargados aún en este hogar para mostrar gráficos.</div>;

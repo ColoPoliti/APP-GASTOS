@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 import toast, { Toaster } from 'react-hot-toast';
-import { FaExclamationTriangle } from 'react-icons/fa';
+import { FaExclamationTriangle, FaCrown } from 'react-icons/fa';
 
 export default function SetupHogar({ userId, onHogarSet }) {
   const { actualizarHogar } = useUser();
@@ -39,7 +39,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
     return () => clearTimeout(timer);
   }, [tempHogar, misHogares]);
 
-  // 2. Cargar hogares propios y hogares de invitaciones ya aceptadas
+  // 2. Cargar hogares propios y hogares de invitaciones ya aceptadas (con el creador_id para validar la corona)
   useEffect(() => {
     const fetchMisHogares = async () => {
       if (!userId) return;
@@ -49,12 +49,12 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
       const { data: creados } = await supabase
         .from('hogares')
-        .select('id, codigo')
+        .select('id, codigo, creador_id')
         .eq('creador_id', userId);
 
       const { data: invitacionesAceptadas } = await supabase
         .from('invitaciones')
-        .select('hogares(id, codigo)')
+        .select('hogares(id, codigo, creador_id)')
         .eq('email_invitado', user.email)
         .eq('estado', 'aceptada');
 
@@ -99,7 +99,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
           .eq('hogar_id', hogarOrigenCategorias);
 
         if (!errCatFetch && categoriasViejas && categoriasViejas.length > 0) {
-          // Preparamos el array para el nuevo hogar (le inyectamos el nuevo id y sacamos los ids viejos)
+          // Preparamos el array para el nuevo hogar
           const categoriasNuevas = categoriasViejas.map(cat => ({
             nombre: cat.nombre,
             color: cat.color || '#6366f1',
@@ -261,6 +261,10 @@ export default function SetupHogar({ userId, onHogarSet }) {
     }
   };
 
+  // Verificamos si el bolsillo tipeado/seleccionado actual pertenece al usuario actual
+  const hogarActualObj = misHogares.find(h => h.codigo === tempHogar.toUpperCase());
+  const esMiCreacion = hogarActualObj && hogarActualObj.creador_id === userId;
+
   return (
     <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-slate-200 dark:bg-slate-950 dark:text-white text-slate-950">
       <Toaster 
@@ -286,24 +290,37 @@ export default function SetupHogar({ userId, onHogarSet }) {
         />
 
         {misHogares.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6 justify-center">
-            {misHogares.map((hogar) => (
-              <button
-                key={hogar.id}
-                onClick={() => {
-                  setTempHogar(hogar.codigo);
-                  setExiste(true);
-                }}
-                className="px-3 py-1 bg-indigo-800 dark:bg-indigo-800 text-slate-300 rounded-full text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700"
-              >
-                {hogar.codigo}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-3 mb-6 justify-center">
+            {misHogares.map((hogar) => {
+              const esCreador = hogar.creador_id === userId;
+              return (
+                <div key={hogar.id} className="relative inline-block mt-2">
+                  {/* Coronita flotando afuera del badge, arriba a la derecha */}
+                  {esCreador && (
+                    <div 
+                      className="absolute -top-2.5 -right-1.5 z-10 bg-amber-500 text-slate-950 rounded-full p-1 shadow-md border border-slate-900 flex items-center justify-center"
+                      title="Sos el creador de este Bolsillo"
+                    >
+                      <FaCrown size={10} className="fill-current" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      setTempHogar(hogar.codigo);
+                      setExiste(true);
+                    }}
+                    className="px-3.5 py-1.5 bg-indigo-800 dark:bg-indigo-800 text-slate-300 rounded-full text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors border border-slate-700 block"
+                  >
+                    {hogar.codigo}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 
         {tempHogar.length >= 3 && (
-          <div className="mb-5 text-sm">
+          <div className="mb-5 text-sm space-y-2">
             {existe ? (
               <div className="p-3 dark:bg-emerald-950/40 bg-emerald-500 border border-emerald-600/50 rounded-lg dark:text-emerald-400 text-emerald-900 font-bold flex items-center justify-center gap-2">
                 <i className="fa fa-check-circle text-base"></i> ¡El Bolsillo existe! Podés unirte.
@@ -311,6 +328,14 @@ export default function SetupHogar({ userId, onHogarSet }) {
             ) : (
               <div className="p-3 dark:bg-amber-950/40 bg-amber-500 border border-amber-600/50 rounded-lg dark:text-amber-400 text-amber-800 font-bold flex items-center justify-center gap-2">
                 <i className="fa fa-exclamation-triangle text-base"></i> El Bolsillo no existe. Podés crearlo.
+              </div>
+            )}
+
+            {/* Leyenda "ESTE BOLSILLO LO CREASTE VOS" cuando aplica */}
+            {existe && esMiCreacion && (
+              <div className="py-2 px-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 uppercase tracking-wide">
+                <FaCrown size={12} className="text-amber-400 shrink-0" />
+                Este bolsillo lo creaste vos
               </div>
             )}
           </div>
@@ -349,7 +374,7 @@ export default function SetupHogar({ userId, onHogarSet }) {
           {loading ? 'Procesando...' : (existe ? 'Unirse al Bolsillo' : 'Crear nuevo Bolsillo')}
         </button>
 
-        {existe && misHogares.find(h => h.codigo === tempHogar.toUpperCase()) && (
+        {existe && esMiCreacion && (
           <button 
             onClick={confirmarEliminarHogar}
             className="w-full mt-4 p-2 dark:text-rose-400 text-rose-900 hover:text-rose-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors underline"

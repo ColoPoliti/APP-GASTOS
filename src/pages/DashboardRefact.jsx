@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient.js';
 import { useUser } from "../context/UserContext.jsx";
@@ -11,78 +11,26 @@ import AceptarInvitacion from '../components/AceptarInvitacion';
 import { FaPlusCircle } from 'react-icons/fa';
 
 export default function Dashboard() {
-    const { loading, sesion, hogarId, nombreUsuario, nombreHogar, actualizarHogar } = useUser();
+    const { 
+        loading, 
+        hogarId, 
+        nombreUsuario, 
+        nombreHogar, 
+        invitacionPendiente, 
+        gastos = [], 
+        transferencias = [], 
+        traerDatosHogar 
+    } = useUser();
     const { theme } = useTheme();
 
-    const [cargandoDatosHogar, setCargandoDatosHogar] = useState(false);
-    const [invitacionPendiente, setInvitacionPendiente] = useState(null);
-    const [verificandoInvitacion, setVerificandoInvitacion] = useState(true);
-    const [gastos, setGastos] = useState([]);
-    const [transferencias, setTransferencias] = useState([]);
-
-    // Verificación de invitaciones aislada y segura
+    // Sincronización en tiempo real atada estrictamente al hogarId actual
     useEffect(() => {
-        let isMounted = true;
-
-        const verificarInvitaciones = async () => {
-            if (!sesion?.user?.email) {
-                if (isMounted) setVerificandoInvitacion(false);
-                return;
-            }
-
-            try {
-                const { data } = await supabase
-                    .from('invitaciones')
-                    .select('*, hogares(codigo)')
-                    .eq('email_invitado', sesion.user.email)
-                    .eq('estado', 'pendiente');
-
-                if (isMounted) {
-                    if (data && data.length > 0) {
-                        setInvitacionPendiente(data[0]);
-                    } else {
-                        setInvitacionPendiente(null);
-                    }
-                }
-            } catch (error) {
-                console.error("Error al verificar invitaciones:", error);
-            } finally {
-                if (isMounted) {
-                    setVerificandoInvitacion(false);
-                }
-            }
-        };
-
-        verificarInvitaciones();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sesion?.user?.email]);
-
-    const traerDatosHogar = async () => {
         if (!hogarId) return;
 
-        setCargandoDatosHogar(true);
-
-        const [resGastos, resTransfers] = await Promise.all([
-            supabase.from('gastos').select(`*, categorias (*), perfiles (*)`).eq('hogar_id', hogarId),
-            supabase.from('transferencias').select('*').eq('hogar_id', hogarId)
-        ]);
-
-        setGastos(resGastos.data || []);
-        if (!resTransfers.error) {
-            setTransferencias(resTransfers.data || []);
+        // Aseguramos tener los datos frescos al montar o cambiar de hogar
+        if (typeof traerDatosHogar === 'function') {
+            traerDatosHogar();
         }
-
-        setCargandoDatosHogar(false);
-    };
-
-    // Efecto para datos y tiempo real atado estrictamente al hogarId actual
-    useEffect(() => {
-        if (!hogarId) return;
-
-        traerDatosHogar();
 
         const channel = supabase
             .channel(`gastos-cambios-${hogarId}`)
@@ -97,7 +45,7 @@ export default function Dashboard() {
                     const hogarAfectadoNew = payload.new?.hogar_id;
                     const hogarAfectadoOld = payload.old?.hogar_id;
 
-                    if (hogarAfectadoNew === hogarId || hogarAfectadoOld === hogarId) {
+                    if ((hogarAfectadoNew === hogarId || hogarAfectadoOld === hogarId) && typeof traerDatosHogar === 'function') {
                         traerDatosHogar();
                     }
                 }
@@ -109,17 +57,13 @@ export default function Dashboard() {
         };
     }, [hogarId]);
 
-    // 1. Si el usuario, el contexto o las invitaciones siguen cargando, mostramos el loader general
-    if (loading || verificandoInvitacion) {
-        return (
-            <div className="min-h-screen dark:bg-slate-950 bg-slate-100 flex flex-col items-center justify-center text-slate-400 space-y-4">
-                <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                <p className="text-sm font-semibold tracking-wider uppercase dark:text-slate-300 text-slate-900">Sincronizando tu espacio...</p>
-            </div>
-        );
-    }
+    // Si el usuario general sigue cargando, no mostramos nada
+    if (loading) return null;
 
- 
+    // Aseguramos de forma segura que gastos sea un array para evitar errores de .length
+    const listaGastos = Array.isArray(gastos) ? gastos : [];
+    const listaTransferencias = Array.isArray(transferencias) ? transferencias : [];
+
     return (
         <div className="min-h-screen dark:bg-slate-950 bg-slate-100 text-dark transition-colors sm:pt-16 pt-8 duration-300 pb-20 relative">
 
@@ -148,43 +92,33 @@ export default function Dashboard() {
             )}
 
             <div className="max-w-6xl mx-auto px-4 py-6">
-
-                {cargandoDatosHogar ? (
-                    <div className="flex flex-col items-center justify-center py-32 space-y-4">
-                        <div className="w-10 h-10 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
-                        <p className="text-xs font-semibold tracking-wider uppercase text-slate-400">Sincronizando bolsillo...</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="mb-10">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                                <div>
-                                    <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
-                                    <p className="dark:text-slate-400 text-slate-950 text-sm">Estás gestionando el bolsillo: <span className="font-bold dark:text-cyan-400 text-purple-600">{nombreHogar}</span></p>
-                                </div>
-
-                                <div className="w-full md:w-auto">
-                                    <InvitarColaborador hogarId={hogarId} />
-                                </div>
-                            </div>
-
-                            <hr className="border-slate-800 my-6" />
-
-                            <ResumenDeudas gastos={gastos} transferencias={transferencias} />
+                <div className="mb-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h1 className="sm:text-3xl text-lg font-black mb-1 mt-1 sm:mt-12 text-dark dark:text-slate-100">¡Hola, {nombreUsuario}!</h1>
+                            <p className="dark:text-slate-400 text-slate-950 text-sm">Estás gestionando el bolsillo: <span className="font-bold dark:text-cyan-400 text-purple-600">{nombreHogar}</span></p>
                         </div>
 
-                        {gastos.length === 0 && (
-                            <div className="mt-12 text-center">
-                                <Link
-                                    to="/gestion-gastos"
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-cyan-400 hover:bg-cyan-700 text-white font-bold py-4 px-8 rounded-2xl shadow shadow-cyan-600/20 transition-all transform hover:-translate-y-0.5"
-                                >
-                                    <FaPlusCircle size={20} />
-                                    EMPEZAR A CARGAR GASTOS
-                                </Link>
-                            </div>
-                        )}
-                    </>
+                        <div className="w-full md:w-auto">
+                            <InvitarColaborador hogarId={hogarId} />
+                        </div>
+                    </div>
+
+                    <hr className="border-slate-800 my-6" />
+
+                    <ResumenDeudas gastos={listaGastos} transferencias={listaTransferencias} />
+                </div>
+
+                {listaGastos.length === 0 && (
+                    <div className="mt-12 text-center">
+                        <Link
+                            to="/gestion-gastos"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-cyan-400 hover:bg-cyan-700 text-white font-bold py-4 px-8 rounded-2xl shadow shadow-cyan-600/20 transition-all transform hover:-translate-y-0.5"
+                        >
+                            <FaPlusCircle size={20} />
+                            EMPEZAR A CARGAR GASTOS
+                        </Link>
+                    </div>
                 )}
             </div>
         </div>

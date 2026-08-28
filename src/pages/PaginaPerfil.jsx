@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { HashLoader } from 'react-spinners';
 import { useUser } from '../context/UserContext.jsx';
 import { FaUser, FaPhone, FaLock, FaSave, FaArrowLeft, FaEye, FaEyeSlash, FaShieldAlt } from "react-icons/fa";
 
@@ -122,19 +123,21 @@ export default function PaginaPerfil() {
   };
 
   if (loading) {
+    const isDark = document.documentElement.classList.contains('dark');
+    const colorLoader = isDark ? '#ffffff' : '#4f46e5';
+
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-slate-950 bg-slate-50">
-        <p className="dark:text-slate-400 text-slate-600 font-medium text-lg">Cargando tus datos de perfil...</p>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center dark:bg-slate-950 bg-slate-50 transition-colors duration-300 gap-4">
+        <HashLoader color={colorLoader} size={60} />Cargando tus datos de perfil...  
       </div>
     );
   }
 
   return (
-
     <div className="fixed inset-0 z-50 dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 flex flex-col overflow-y-auto">
       
       {/* Barra superior de navegación interna */}
-      <div className="w-full fixed border-b border-slate-200 z-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-4 sm:px-6 py-3 flex items-center justify-between shadowshrink-0">
+      <div className="w-full fixed border-b border-slate-200 z-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 px-4 sm:px-6 py-3 flex items-center justify-between shadow shrink-0">
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"

@@ -188,7 +188,6 @@ export default function GestionGastos({ hogarId, sesion }) {
                             traerCategorias();
                             traerGastos();
                             setCategoriaEditando(null);
-                            toast.success("Categoría guardada con éxito", { position: 'bottom-center' });
                         }}
                         onCancelar={() => setCategoriaEditando(null)}
                         onEliminar={async (id) => {
@@ -199,19 +198,25 @@ export default function GestionGastos({ hogarId, sesion }) {
                                     </p>
                                     <div className="flex gap-2 justify-end">
                                         <button
+                                            type="button"
                                             onClick={() => toast.dismiss(t.id)}
                                             className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs transition-colors cursor-pointer"
                                         >
                                             Cancelar
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={async () => {
                                                 toast.dismiss(t.id);
-                                                await supabase.from('categorias').delete().eq('id', id);
-                                                toast.success("Categoría eliminada", { position: 'bottom-center' });
-                                                traerCategorias(); 
-                                                traerGastos(); 
-                                                setCategoriaEditando(null);
+                                                const { error } = await supabase.from('categorias').delete().eq('id', id);
+                                                if (error) {
+                                                    toast.error("Error al eliminar: " + error.message, { position: 'bottom-center' });
+                                                } else {
+                                                    toast.success("Categoría eliminada con éxito", { position: 'bottom-center' });
+                                                    setCategoriaEditando(null); // <-- Asegura que se limpie el estado para cerrar el modal
+                                                    traerCategorias(); 
+                                                    traerGastos(); 
+                                                }
                                             }}
                                             className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
                                         >
