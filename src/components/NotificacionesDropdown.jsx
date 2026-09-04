@@ -7,7 +7,6 @@ import { FaBell } from "react-icons/fa";
 export default function NotificacionesDropdown() {
   const userContext = useUser();
 
-  // Blindaje total: capturamos el ID sin importar cómo se llame en tu Contexto
   const userId =
     userContext?.user?.id ||
     userContext?.sesion?.user?.id ||
@@ -32,34 +31,33 @@ export default function NotificacionesDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mostrarDropdown]);
 
+  const cargarNotificaciones = async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("notificaciones")
+        .select("*")
+        .eq("usuario_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      if (data) {
+        setNotificaciones(data);
+        setNoLeidas(data.some((n) => !n.leido));
+      }
+    } catch (err) {
+      console.error("Error al cargar notificaciones:", err);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
-
     if (!userId) return;
-
-    const cargarNotificaciones = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("notificaciones")
-          .select("*")
-          .eq("usuario_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (error) throw error;
-
-        if (isMounted && data) {
-          setNotificaciones(data);
-          setNoLeidas(data.some((n) => !n.leido));
-        }
-      } catch (err) {
-        console.error("Error al cargar notificaciones:", err);
-      }
-    };
 
     cargarNotificaciones();
 
-    // Creamos un canal único con timestamp para evitar duplicados de suscripción
     const channelName = `notificaciones_usuario_${userId}_${Math.random()}`;
     const canalUnificado = supabase
       .channel(channelName)
@@ -86,21 +84,35 @@ export default function NotificacionesDropdown() {
   }, [userId]);
 
   const abrirDropdown = async () => {
-    setMostrarDropdown((prev) => !prev);
+    const nuevoEstadoDropdown = !mostrarDropdown;
+    setMostrarDropdown(nuevoEstadoDropdown);
 
-    if (!noLeidas || !userId) return;
+    if (nuevoEstadoDropdown && noLeidas && userId) {
+      const idsNoLeidas = notificaciones
+        .filter((n) => !n.leido)
+        .map((n) => n.id);
 
-    setNoLeidas(false);
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leido: true })));
+      if (idsNoLeidas.length === 0) return;
 
-    try {
-      await supabase
-        .from("notificaciones")
-        .update({ leido: true })
-        .eq("usuario_id", userId)
-        .eq("leido", false);
-    } catch (err) {
-      console.error("Error al marcar leídas:", err);
+      setNoLeidas(false);
+      setNotificaciones((prev) => prev.map((n) => ({ ...n, leido: true })));
+
+      try {
+        const { error } = await supabase
+          .from("notificaciones")
+          .update({ leido: true })
+          .in("id", idsNoLeidas);
+
+        if (error) {
+          console.error(
+            "❌ Error de Supabase al marcar leídas:",
+            error.message,
+          );
+          cargarNotificaciones();
+        }
+      } catch (err) {
+        console.error("❌ Error inesperado al marcar leídas:", err);
+      }
     }
   };
 
@@ -132,11 +144,45 @@ export default function NotificacionesDropdown() {
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
+      <style>{`
+        @keyframes bellIntermittentShake {
+          0%, 75%, 100% {
+            transform: rotate(0deg);
+          }
+          78% {
+            transform: rotate(12deg);
+          }
+          82% {
+            transform: rotate(-12deg);
+          }
+          86% {
+            transform: rotate(8deg);
+          }
+          90% {
+            transform: rotate(-8deg);
+          }
+          94% {
+            transform: rotate(4deg);
+          }
+          98% {
+            transform: rotate(0deg);
+          }
+        }
+        .animate-bell-lapsos {
+          animation: bellIntermittentShake 4s ease-in-out infinite;
+        }
+      `}</style>
+
       <button
         onClick={abrirDropdown}
         className="relative text-white hover:opacity-80 focus:outline-none flex items-center justify-center p-1 cursor-pointer"
+        aria-label="Notificaciones"
       >
-        <FaBell className="text-xl md:text-2xl" />
+        <FaBell
+          className={`text-xl md:text-2xl ${
+            noLeidas ? "animate-bell-lapsos text-amber-400" : ""
+          }`}
+        />
 
         {noLeidas && (
           <span className="absolute top-0 right-0 w-3 h-3 bg-purple-800 rounded-full animate-pulse border border-white"></span>
@@ -168,7 +214,11 @@ export default function NotificacionesDropdown() {
                       !notif.leido
                         ? "bg-indigo-950/40 dark:text-slate-400 text-slate-950 "
                         : "dark:text-slate-300 text-slate-950"
-                    } ${esInvitacion ? "cursor-pointer hover:bg-indigo-900/40 hover:text-white" : ""}`}
+                    } ${
+                      esInvitacion
+                        ? "cursor-pointer hover:bg-indigo-900/40 hover:text-white"
+                        : ""
+                    }`}
                   >
                     <p className="dark:text-white text-slate-800">
                       {textoFinal}

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { navLinks } from "../config/navLinks";
 import "./App.css";
-import { FaPiggyBank, FaWallet } from "react-icons/fa";
+import { FaPiggyBank, FaWallet, FaMoneyBillWave, FaStar } from "react-icons/fa";
 
 export default function Sidebar({ expanded, setExpanded }) {
   const { theme } = useTheme();
@@ -76,6 +76,9 @@ export default function Sidebar({ expanded, setExpanded }) {
               currentPath === linkRoute ||
               (link.id === "dashboard" && currentPath === "/dashboard");
 
+            // Detectamos si es el ítem especial premium
+            const isVaquitas = link.id === "vaquitas";
+
             return (
               <li key={link.id} className="relative">
                 <button
@@ -83,7 +86,9 @@ export default function Sidebar({ expanded, setExpanded }) {
                   style={{ outline: "none", boxShadow: "none" }}
                   className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all group select-none ${
                     isActive
-                      ? "font-semibold dark:text-cyan-400 text-purple-800 bg-transparent"
+                      ? isVaquitas
+                        ? "font-semibold text-amber-500 bg-transparent"
+                        : "font-semibold dark:text-cyan-400 text-purple-800 bg-transparent"
                       : "hover:bg-white/10 text-inherit bg-transparent"
                   }`}
                 >
@@ -91,17 +96,26 @@ export default function Sidebar({ expanded, setExpanded }) {
                   <div
                     className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all ${
                       isActive
-                        ? "dark:bg-cyan-500/20 dark:text-cyan-400 bg-purple-500/20 text-purple-800"
-                        : "group-hover:bg-white/20"
+                        ? isVaquitas
+                          ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                          : "dark:bg-cyan-500/20 dark:text-cyan-400 bg-purple-500/20 text-purple-800"
+                        : isVaquitas
+                          ? "bg-amber-500/10 text-white group-hover:bg-amber-500/20"
+                          : "group-hover:bg-white/20"
                     }`}
                   >
-                    {link.id === "vaquitas" ? (
-                      <FaPiggyBank
+                    {link.id === "finanzas" ? (
+                      <FaMoneyBillWave
                         className={`text-xl transition-colors ${
                           isActive
                             ? "dark:text-cyan-400 text-purple-800"
                             : "text-inherit"
                         }`}
+                        style={{ fontSize: "1.3em" }}
+                      />
+                    ) : isVaquitas ? (
+                      <FaPiggyBank
+                        className="text-xl transition-colors text-white"
                         style={{ fontSize: "1.3em" }}
                       />
                     ) : (
@@ -110,18 +124,30 @@ export default function Sidebar({ expanded, setExpanded }) {
                         style={{ fontSize: "1.3em" }}
                       />
                     )}
-                    {/* Puntito más pequeño indicador */}
-                    {!isActive && (
+
+                    {/* Estrellita flotante indicator para la versión premium */}
+                    {isVaquitas && (
+                      <span className="absolute -top-1 -right-1 bg-cyan-500 text-white rounded-full p-1 shadow-md flex items-center justify-center text-[9px] w-4 h-4">
+                        <FaStar size={8} />
+                      </span>
+                    )}
+
+                    {/* Puntito más pequeño indicador (solo para los que NO son vaquitas) */}
+                    {!isActive && !isVaquitas && (
                       <span className="absolute top-1 right-1 w-1.5 h-1.5 dark:bg-cyan-500 bg-purple-600 rounded-full opacity-75"></span>
                     )}
                   </div>
 
                   {/* Texto del menú */}
                   <span
-                    className={`whitespace-nowrap transition-opacity duration-200 txt-dark ${
+                    className={`whitespace-nowrap transition-opacity duration-200 txt-dark flex items-center gap-2 ${
                       isActive
-                        ? "dark:text-cyan-400 text-purple-800 font-bold"
-                        : ""
+                        ? isVaquitas
+                          ? "text-white font-bold"
+                          : "dark:text-cyan-400 text-purple-800 font-bold"
+                        : isVaquitas
+                          ? "text-amber-500/90 font-medium"
+                          : ""
                     } ${
                       expanded
                         ? "opacity-100"
@@ -129,6 +155,12 @@ export default function Sidebar({ expanded, setExpanded }) {
                     }`}
                   >
                     {link.label}
+                    {/* Estrellita extra opcional al lado del texto cuando está expandido */}
+                    {isVaquitas && (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-500 font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-amber-500/20">
+                        <FaStar size={8} /> PRO
+                      </span>
+                    )}
                   </span>
                 </button>
               </li>

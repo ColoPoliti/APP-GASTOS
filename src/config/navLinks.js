@@ -27,12 +27,12 @@ export const navLinks = [
   {
     id: "finanzas",
     label: "Mis Finanzas",
-    icon: "fa-wallet",
+    icon: "FaMoneyBillWave",
     path: "/finanzas",
-  }, // Cambié este icono para liberar 'fa-piggy-bank'
+  },
   {
     id: "vaquitas",
-    label: "Hagamos una Vaquita",
+    label: "Vaquita",
     icon: "fa-piggy-bank",
     path: "/vaquitas",
   },
