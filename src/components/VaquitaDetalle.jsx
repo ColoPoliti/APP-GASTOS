@@ -508,31 +508,31 @@ export default function VaquitaDetalle({ vaquita, onVolver }) {
                   return (
                     <div
                       key={b.usuario_id}
-                      className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs gap-3 sm:gap-0"
                     >
                       <div>
-                        <p className="font-bold text-slate-800 dark:text-white">
+                        <p className="font-bold text-slate-800 dark:text-white break-all">
                           {b.email}
                         </p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[14px] text-slate-400 mt-0.5">
                           Puso: ${b.puesto.toLocaleString()}
                         </p>
                       </div>
 
-                      <div>
+                      <div className="flex justify-start sm:justify-end">
                         {estaAlDia ? (
-                          <span className="bg-emerald-500/10 text-emerald-500 font-bold px-3 py-1 rounded-lg flex items-center gap-1">
+                          <span className="bg-emerald-500/10 text-emerald-500 font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 text-[11px]">
                             <FaCheckCircle /> No debe NADA
                           </span>
                         ) : leTienenQueDar ? (
-                          <span className="bg-amber-500/10 text-amber-500 font-bold px-3 py-1 rounded-lg">
+                          <span className="bg-amber-500/10 text-amber-500 font-bold px-3 py-1.5 rounded-xl text-[11px]">
                             Le deben: +$
                             {b.diferencia.toLocaleString(undefined, {
                               maximumFractionDigits: 2,
                             })}
                           </span>
                         ) : (
-                          <span className="bg-red-500/10 text-red-500 font-bold px-3 py-1 rounded-lg">
+                          <span className="bg-red-500/10 text-red-500 font-bold px-3 py-1.5 rounded-xl text-[11px]">
                             Tiene que poner: $
                             {Math.abs(b.diferencia).toLocaleString(undefined, {
                               maximumFractionDigits: 2,
