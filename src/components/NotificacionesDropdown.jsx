@@ -43,10 +43,25 @@ export default function NotificacionesDropdown() {
 
       if (error) throw error;
 
-      if (data) {
-        setNotificaciones(data);
-        setNoLeidas(data.some((n) => !n.leido));
-      }
+      // Nos quedamos solo con las invitaciones que siguen pendientes.
+      // Si la invitación ya fue aceptada o rechazada, la notificación desaparece
+      // y dejan de ofrecer la opción de gestionarla.
+      const { data: invitacionesData } = await supabase
+        .from("invitaciones")
+        .select("id, estado")
+        .eq("email_invitado", userContext?.user?.email)
+        .eq("estado", "pendiente");
+
+      const idsInvitacionesPendientes = new Set(
+        (invitacionesData || []).map((inv) => inv.id)
+      );
+
+      const notificacionesFiltradas = (data || []).filter(
+        (n) => !n.invitacion_id || idsInvitacionesPendientes.has(n.invitacion_id)
+      );
+
+      setNotificaciones(notificacionesFiltradas);
+      setNoLeidas(notificacionesFiltradas.some((n) => !n.leido));
     } catch (err) {
       console.error("Error al cargar notificaciones:", err);
     }
@@ -75,13 +90,27 @@ export default function NotificacionesDropdown() {
           }
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "invitaciones",
+          filter: `email_invitado=eq.${userContext?.user?.email}`,
+        },
+        () => {
+          if (isMounted) {
+            cargarNotificaciones();
+          }
+        },
+      )
       .subscribe();
 
     return () => {
       isMounted = false;
       supabase.removeChannel(canalUnificado);
     };
-  }, [userId]);
+  }, [userId, userContext?.user?.email]);
 
   const abrirDropdown = async () => {
     const nuevoEstadoDropdown = !mostrarDropdown;
@@ -249,6 +278,9 @@ export default function NotificacionesDropdown() {
           onClose={() => setInvitacionSeleccionada(null)}
           onAceptada={() => {
             window.location.reload();
+          }}
+          onRechazada={() => {
+            setInvitacionSeleccionada(null);
           }}
         />
       )}

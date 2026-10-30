@@ -15,21 +15,54 @@ export default function PaginaTransferencias() {
         if (!hogarId) return;
         setCargando(true);
         try {
-            const { data: transData, error: transError } = await supabase
-                .from('transferencias')
-                .select('*')
-                .eq('hogar_id', hogarId)
-                .order('fecha', { ascending: false });
+            const [transResult, perfilesResult, gastosResult] = await Promise.all([
+                supabase
+                    .from('transferencias')
+                    .select('*')
+                    .eq('hogar_id', hogarId)
+                    .order('fecha', { ascending: false }),
+                supabase.from('perfiles').select('*'),
+                supabase
+                    .from('gastos')
+                    .select('*, categorias (*), perfiles (*)')
+                    .eq('hogar_id', hogarId),
+            ]);
 
+            const transData = transResult.data || [];
+            const transError = transResult.error;
             if (transError) throw transError;
-            setTransferencias(transData || []);
+            setTransferencias(transData);
 
-            const { data: perfilData, error: perfilError } = await supabase
-                .from('perfiles')
-                .select('*');
-
+            const perfilData = perfilesResult.data || [];
+            const perfilError = perfilesResult.error;
             if (perfilError) throw perfilError;
-            setMiembros(perfilData || []);
+
+            // Coleccionamos los usuarios que participaron de este bolsín (gastos y transferencias).
+            // Con esto no perdemos de vista a un contacto aunque después haya cambiado de bolsín.
+            const idsParticipantes = new Set();
+            const agregarParticipante = (id) => {
+                if (id) idsParticipantes.add(id);
+            };
+
+            transData.forEach((t) => {
+                agregarParticipante(t.enviado_por);
+                agregarParticipante(t.recibido_por);
+            });
+
+            (gastosResult.data || []).forEach((g) => {
+                agregarParticipante(g.perfiles?.id);
+                agregarParticipante(g.pagado_por);
+            });
+
+            const miembrosDelBolsino = (perfilData || []).filter(
+                (p) =>
+                    idsParticipantes.has(p.id) ||
+                    p.hogar_id === hogarId ||
+                    p.hogarId === hogarId ||
+                    (!p.hogar_id && !p.hogarId)
+            );
+
+            setMiembros(miembrosDelBolsino);
         } catch (error) {
             console.error("Error al cargar datos de transferencias:", error);
         } finally {

@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient.js';
 import { useUser } from '../context/UserContext.jsx';
 import toast from 'react-hot-toast';
 
-export default function AceptarInvitacion({ invitacion }) {
+export default function AceptarInvitacion({ invitacion, onAceptada, onPosponer }) {
   const { refrescarPerfil } = useUser();
 
     const aceptar = async () => {
@@ -29,6 +29,7 @@ export default function AceptarInvitacion({ invitacion }) {
 
             toast.success('¡Te uniste al hogar con éxito!', { position: 'bottom-center' });
 
+            if (onAceptada) onAceptada();
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
@@ -38,12 +39,52 @@ export default function AceptarInvitacion({ invitacion }) {
         }
     };
 
+    const rechazar = async () => {
+        try {
+            const { error } = await supabase
+                .from('invitaciones')
+                .update({ estado: 'rechazada' })
+                .eq('id', invitacion.id);
+
+            if (error) throw error;
+
+            toast.success('Invitación rechazada.', { position: 'bottom-center' });
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } catch (error) {
+            console.error("Error capturado:", error);
+            toast.error("Error al rechazar la invitación: " + error.message, { position: 'bottom-center' });
+        }
+    };
+
+    const posponer = () => {
+        if (onPosponer) {
+            onPosponer();
+        }
+    };
+
     return (
-        <button 
-            onClick={aceptar}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition"
-        >
-            ¡Aceptar y unirme al hogar!
-        </button>
+        <div className="flex flex-col gap-2 pt-2">
+            <button 
+                onClick={aceptar}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition"
+            >
+                ¡Aceptar y unirme al hogar!
+            </button>
+            <button 
+                onClick={rechazar}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition"
+            >
+                Rechazar
+            </button>
+            <button 
+                onClick={posponer}
+                className="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-lg transition"
+            >
+                Más tarde
+            </button>
+        </div>
     );
 }

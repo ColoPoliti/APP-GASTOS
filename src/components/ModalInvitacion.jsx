@@ -2,7 +2,7 @@ import React from 'react';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 
-export default function ModalInvitacion({ invitacion, onClose, onAceptada }) {
+export default function ModalInvitacion({ invitacion, onClose, onAceptada, onRechazada }) {
   // Usamos 'sesion' que es como lo manejas en el resto de tus componentes
   const { sesion, actualizarHogar } = useUser();
 
@@ -44,6 +44,23 @@ export default function ModalInvitacion({ invitacion, onClose, onAceptada }) {
     }
   };
 
+  const rechazarInvitacion = async () => {
+    try {
+      const { error } = await supabase
+        .from('invitaciones')
+        .update({ estado: 'rechazada' })
+        .eq('id', invitacion.id);
+
+      if (error) throw error;
+
+      if (onRechazada) onRechazada();
+      onClose();
+    } catch (err) {
+      console.error("Error capturado:", err);
+      alert("Hubo un error al rechazar la invitación.");
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 max-w-sm w-full text-white space-y-4">
@@ -51,18 +68,24 @@ export default function ModalInvitacion({ invitacion, onClose, onAceptada }) {
         <p className="text-slate-400 text-sm">
           Te invitaron a unirte al bolsillo: <span className="text-indigo-400 font-bold">{invitacion.hogar_nombre || invitacion.hogares?.codigo || 'Compartido'}</span>
         </p>
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-col gap-2 pt-2">
           <button 
             onClick={aceptarInvitacion}
-            className="flex-1 bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-500 transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
           >
             Aceptar
           </button>
           <button 
-            onClick={onClose}
-            className="flex-1 bg-slate-800 text-slate-300 p-2 rounded-lg font-bold hover:bg-slate-700 transition-colors"
+            onClick={rechazarInvitacion}
+            className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
           >
-            Cancelar
+            Rechazar
+          </button>
+          <button 
+            onClick={onClose}
+            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 px-4 rounded-lg transition-colors"
+          >
+            Más tarde
           </button>
         </div>
       </div>

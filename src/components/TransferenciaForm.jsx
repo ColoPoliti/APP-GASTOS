@@ -37,25 +37,19 @@ export default function TransferenciaForm({
   const otrosMiembros = useMemo(() => {
     if (!usuarioActual) return [];
 
-    return miembros.filter((miembro) => {
-      const perteneceAlHogar =
-        !hogarId ||
-        miembro.hogar_id === hogarId ||
-        miembro.hogarId === hogarId ||
-        (!miembro.hogar_id && !miembro.hogarId);
+    const idUsuarioActual = String(usuarioActual.id || '').trim();
 
-      if (!perteneceAlHogar) return false;
-
-      const esUsuarioActual =
-        String(miembro.id || '').trim() === String(usuarioActual.id || '').trim() ||
-        String(miembro.user_id || '').trim() === String(usuarioActual.id || '').trim() ||
-        String(miembro.uid || '').trim() === String(usuarioActual.id || '').trim();
-
-      if (esUsuarioActual) return false;
-
-      return true;
+    // La lista de miembros que recibe ya viene preparada por la página, filtrada por el
+    // bolsín activo e incluyendo a los contactos que participaron en él aunque luego
+    // hayan cambiado de bolsín. Acá nos quedamos con todos los que no somos vos.
+    return (miembros || []).filter((miembro) => {
+      const esMiembroActual =
+        String(miembro?.id || '').trim() === idUsuarioActual ||
+        String(miembro?.user_id || '').trim() === idUsuarioActual ||
+        String(miembro?.uid || '').trim() === idUsuarioActual;
+      return !esMiembroActual;
     });
-  }, [miembros, hogarId, usuarioActual]);
+  }, [miembros, usuarioActual]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

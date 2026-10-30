@@ -17,6 +17,7 @@ export default function Dashboard() {
     nombreUsuario,
     nombreHogar,
     invitacionPendiente,
+    setInvitacionPendiente,
     gastos = [],
     transferencias = [],
     traerDatosHogar,
@@ -94,6 +95,9 @@ export default function Dashboard() {
                 invitacion={invitacionPendiente}
                 onAceptado={() => {
                   window.location.reload();
+                }}
+                onPosponer={() => {
+                  setInvitacionPendiente(null);
                 }}
               />
             </div>

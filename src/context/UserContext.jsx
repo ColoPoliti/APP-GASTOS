@@ -260,6 +260,7 @@ export function UserProvider({ children }) {
       actualizarHogar, 
       refrescarPerfil, 
       traerDatosHogar,
+      setInvitacionPendiente,
       loading 
     }}>
       {children}

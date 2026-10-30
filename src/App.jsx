@@ -138,6 +138,9 @@ function AppContent() {
               onAceptado={() => {
                 window.location.reload();
               }}
+              onPosponer={() => {
+                setInvitacionPendiente(null);
+              }}
             />
           </div>
         </div>

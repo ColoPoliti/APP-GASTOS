@@ -27,6 +27,34 @@ export default function InvitarColaborador({ hogarId }) {
 
     setLoading(true);
 
+    // 1.1. Solo el creador del bolsillo puede invitar colaboradores
+    const { data: hogarData, error: hogarError } = await supabase
+      .from("hogares")
+      .select("id, creador_id")
+      .eq("id", hogarId)
+      .single();
+
+    if (hogarError || !hogarData) {
+      toast.error("No se pudo verificar el bolsillo.", {
+        position: "bottom-center",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const esCreador = String(hogarData.creador_id || "").trim() === String(sesion?.user?.id || "").trim();
+
+    if (!esCreador) {
+      toast.error(
+        "Solo el creador de este bolsillo puede invitar colaboradores.",
+        {
+          position: "bottom-center",
+        },
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1.5. RESTRICCIÓN FASE 1: Validar que el hogar no tenga ya 2 o más miembros
       const { count, error: countError } = await supabase
