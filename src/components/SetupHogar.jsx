@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useUser } from "../context/UserContext";
 import toast, { Toaster } from "react-hot-toast";
@@ -6,6 +7,7 @@ import { FaExclamationTriangle, FaCrown } from "react-icons/fa";
 
 export default function SetupHogar({ userId, onHogarSet }) {
   const { actualizarHogar } = useUser();
+  const navigate = useNavigate();
   const [tempHogar, setTempHogar] = useState("");
   const [loading, setLoading] = useState(false);
   const [misHogares, setMisHogares] = useState([]);
@@ -13,6 +15,9 @@ export default function SetupHogar({ userId, onHogarSet }) {
 
   // Estado para la opción de importar categorías
   const [hogarOrigenCategorias, setHogarOrigenCategorias] = useState("");
+
+  // Estado para las vaquitas creadas por el usuario
+  const [misVaquitas, setMisVaquitas] = useState([]);
 
   // 1. Verificar si el hogar existe al escribir manualmente
   useEffect(() => {
@@ -76,6 +81,26 @@ export default function SetupHogar({ userId, onHogarSet }) {
       setMisHogares(listaUnica);
     };
     fetchMisHogares();
+  }, [userId]);
+
+  // 2.1 Cargar las vaquitas creadas por el usuario actual
+  useEffect(() => {
+    const fetchMisVaquitas = async () => {
+      if (!userId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: vaquitasCreadas } = await supabase
+        .from("vaquitas")
+        .select("id, titulo, creador_id, estado, created_at")
+        .eq("creador_id", userId);
+
+      setMisVaquitas(vaquitasCreadas || []);
+    };
+    fetchMisVaquitas();
   }, [userId]);
 
   // 3. Crear Hogar e importar categorías si seleccionó una procedencia
@@ -433,18 +458,38 @@ export default function SetupHogar({ userId, onHogarSet }) {
                 Gestioná tus vaquitas de gastos compartidos:
               </p>
 
-              {/* Espacio reservado para las vaquitas */}
-              <div className="p-6 border-2 border-dashed dark:border-slate-800 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs">
-                <p>Acá va a ir la lógica de tus vaquitas.</p>
-                <span className="mt-2 text-[10px] opacity-70">
-                  (Independiente de los bolsillos)
-                </span>
-              </div>
+              {misVaquitas.length > 0 ? (
+                <div className="space-y-2 mb-6 text-left">
+                  {misVaquitas.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() =>
+                        navigate("/vaquitas", { state: { vaquita: v } })
+                      }
+                      className="w-full p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 transition-colors flex items-center justify-between gap-2"
+                    >
+                      <span className="text-amber-400 font-bold text-sm truncate">
+                        🐷 {v.titulo}
+                      </span>
+                      <span className="text-slate-400 text-xs shrink-0">
+                        Entrar →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 border-2 border-dashed dark:border-slate-800 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs">
+                  <p>No tenés vaquitas creadas todavía.</p>
+                  <span className="mt-2 text-[10px] opacity-70">
+                    Creá una para empezar a dividir gastos.
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
-              disabled
-              className="w-full p-3 rounded-lg font-bold text-white bg-slate-700 opacity-50 cursor-not-allowed text-sm mt-6"
+              onClick={() => navigate("/vaquitas")}
+              className="w-full p-3 rounded-lg font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-sm mt-6 transition-all shadow-md shadow-orange-600/20"
             >
               Crear nueva Vaquita
             </button>

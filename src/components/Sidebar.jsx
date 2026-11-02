@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { navLinks } from "../config/navLinks";
+import { navLinks, vaquitasLink } from "../config/navLinks";
 import "./App.css";
 import { FaPiggyBank, FaWallet, FaMoneyBillWave, FaStar } from "react-icons/fa";
 
@@ -70,17 +70,27 @@ export default function Sidebar({ expanded, setExpanded }) {
       {/* Lista de Enlaces */}
       <nav className="flex-1 overflow-y-auto py-2">
         <ul className="space-y-2 px-2">
-          {navLinks.map((link) => {
+          {[...navLinks, vaquitasLink].map((link) => {
             const linkRoute = link.id === "dashboard" ? "/" : `/${link.id}`;
             const isActive =
               currentPath === linkRoute ||
               (link.id === "dashboard" && currentPath === "/dashboard");
 
-            // Detectamos si es el ítem especial premium
+            // Detectamos si es el ítem especial premium (mundo aparte)
             const isVaquitas = link.id === "vaquitas";
 
             return (
               <li key={link.id} className="relative">
+                {/* Separador visual: Vaquitas es un mundo aparte del Bolsillo */}
+                {isVaquitas && (
+                  <div className="flex items-center gap-2 px-2 pt-4 pb-1">
+                    <span className="flex-1 h-px bg-slate-300 dark:bg-white/10"></span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80">
+                      Premium
+                    </span>
+                    <span className="flex-1 h-px bg-slate-300 dark:bg-white/10"></span>
+                  </div>
+                )}
                 <button
                   onClick={(e) => handleNavigation(link.id, e)}
                   style={{ outline: "none", boxShadow: "none" }}

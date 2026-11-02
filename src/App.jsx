@@ -52,6 +52,7 @@ function ScrollToTop() {
 
 function AppContent() {
   const { sesion, loading, hogarId, refrescarPerfil } = useUser();
+  const location = useLocation();
   const [invitacionPendiente, setInvitacionPendiente] = useState(null);
   const [verificandoInvitacion, setVerificandoInvitacion] = useState(true);
 
@@ -149,7 +150,8 @@ function AppContent() {
   }
 
   // 2. Si no tiene hogar, le mostramos el setup y forzamos recarga de perfil al completarlo
-  if (!hogarId) {
+  // Pero si ya esta en /vaquitas, mostramos la gestion de vaquitas aunque no tenga bolsillo
+  if (!hogarId && location.pathname !== "/vaquitas") {
     return (
       <SetupHogar
         userId={sesion.user.id}

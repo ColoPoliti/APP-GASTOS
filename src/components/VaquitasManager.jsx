@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useUser } from "../context/UserContext";
-import { FaPiggyBank, FaPlus, FaTimes, FaUsers, FaTrash } from "react-icons/fa";
+import {
+  FaPiggyBank,
+  FaPlus,
+  FaTimes,
+  FaUsers,
+  FaTrash,
+  FaStar,
+} from "react-icons/fa";
 import toast from "react-hot-toast";
 import VaquitaDetalle from "./VaquitaDetalle";
 
 export default function VaquitasManager({ onCerrar }) {
   const { sesion } = useUser();
+  const location = useLocation();
   const [vaquitas, setVaquitas] = useState([]);
   const [vaquitaSeleccionada, setVaquitaSeleccionada] = useState(null);
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -69,6 +78,14 @@ export default function VaquitasManager({ onCerrar }) {
       traerVaquitas();
     }
   }, [sesion]);
+
+  // Si nos llegaron desde el setup indicando una vaquita, abrirla directamente
+  useEffect(() => {
+    const vaquitaState = location.state?.vaquita;
+    if (vaquitaState) {
+      setVaquitaSeleccionada(vaquitaState);
+    }
+  }, [location]);
 
   // Crear una nueva vaquita
   const handleCrearVaquita = async (e) => {
@@ -218,6 +235,9 @@ export default function VaquitasManager({ onCerrar }) {
             <FaPiggyBank />
           </div>
           <div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full mb-1">
+              <FaStar size={9} /> Sección Premium
+            </span>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">
               Hagamos una Vaquita
             </h2>
@@ -227,13 +247,27 @@ export default function VaquitasManager({ onCerrar }) {
           </div>
         </div>
 
-        <button
-          onClick={() => setIsOpenModal(true)}
-          className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-orange-600/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <FaPlus />
-          <span>Nueva Vaquita</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <button
+            onClick={() =>
+              toast(
+                "🚀 Próximamente vas a poder suscribirte a la sección Vaquitas.",
+                { position: "bottom-center" },
+              )
+            }
+            className="w-full sm:w-auto border border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold py-3 px-6 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <FaStar size={12} />
+            <span>Suscribirse</span>
+          </button>
+          <button
+            onClick={() => setIsOpenModal(true)}
+            className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-orange-600/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <FaPlus />
+            <span>Nueva Vaquita</span>
+          </button>
+        </div>
       </div>
 
       {/* Listado de Vaquitas */}

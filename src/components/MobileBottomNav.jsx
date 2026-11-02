@@ -1,6 +1,7 @@
+import { Fragment } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { navLinks } from "../config/navLinks";
+import { navLinks, vaquitasLink } from "../config/navLinks";
 import { FaPiggyBank, FaStar, FaMoneyBillWave } from "react-icons/fa";
 
 export default function MobileBottomNav({ isModalOpen }) {
@@ -16,7 +17,7 @@ export default function MobileBottomNav({ isModalOpen }) {
       className={`md:hidden fixed bottom-0 left-0 w-full h-16 flex justify-around items-center border-t transition-colors duration-500 z-40 shadow-xl
       ${theme === "dark" ? "bg-[#060a17] border-gray-800 text-white" : "bg-white border-gray-200 text-slate-500"}`}
     >
-      {navLinks.map((link) => {
+      {[...navLinks, vaquitasLink].map((link) => {
         const linkRoute = link.id === "dashboard" ? "/" : `/${link.id}`;
         const rutaActiva =
           location.pathname === linkRoute ||
@@ -25,10 +26,17 @@ export default function MobileBottomNav({ isModalOpen }) {
         const isVaquitas = link.id === "vaquitas";
 
         return (
-          <button
-            key={link.id}
-            onClick={() => navigate(linkRoute)}
-            className={`flex flex-col items-center justify-center w-full h-full text-xs transition-colors cursor-pointer relative select-none
+          <Fragment key={link.id}>
+            {/* Separador vertical: Vaquitas es un mundo aparte del Bolsillo */}
+            {isVaquitas && (
+              <span
+                aria-hidden="true"
+                className="w-px h-8 bg-slate-300 dark:bg-white/10 mx-1 shrink-0"
+              ></span>
+            )}
+            <button
+              onClick={() => navigate(linkRoute)}
+              className={`flex flex-col items-center justify-center w-full h-full text-xs transition-colors cursor-pointer relative select-none
             ${
               rutaActiva
                 ? isVaquitas
@@ -40,7 +48,7 @@ export default function MobileBottomNav({ isModalOpen }) {
                     ? "text-gray-400 hover:text-white"
                     : "text-gray-600 hover:text-black"
             }`}
-          >
+            >
             {/* Contenedor del ícono con soporte para estilo especial de vaquitas */}
             <div
               className={`relative flex items-center justify-center w-7 h-7 rounded-full transition-all ${
@@ -80,7 +88,8 @@ export default function MobileBottomNav({ isModalOpen }) {
 
             {/* Opcional: etiqueta oculta o visible si querés mostrar texto chico abajo */}
             <span className="hidden">{link.label}</span>
-          </button>
+            </button>
+          </Fragment>
         );
       })}
     </nav>
